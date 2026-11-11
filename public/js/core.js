@@ -32,7 +32,6 @@ export function defaultConfig(now = Date.now()) {
       welkom: 'Fijn dat je er bent! Bestellen doe je gewoon bij ons, aan tafel.',
       welkomEn: '',
       logo: '',
-      instagram: '@cafeguido',
       googleReviewUrl: '',
       instagramUrl: '',
       facebookUrl: ''

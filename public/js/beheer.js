@@ -308,7 +308,7 @@ function klantschermTab() {
   const logo = c.cafe.logo ? `<img src="${esc(c.cafe.logo)}" alt="Logo">` : (c.cafe.naam || 'guido.') === 'guido.' ? '<img src="img/logo.png" alt="guido.">' : `<span class="woordmerk">${esc((c.cafe.naam || '').replace(/\.$/, ''))}<b>.</b></span>`;
   const algemeen = `<section class="blok"><h2>Bovenaan het scherm</h2><p class="uitleg">Hou de welkomtekst kort: de knoppen moeten meteen zichtbaar zijn.</p>
     <div class="li-velden">
-      <div class="grid2">${tekstVeld('cafe.naam', 'Naam van het café')}${tekstVeld('cafe.instagram', 'Instagram', { placeholder: '@cafeguido' })}</div>
+      ${tekstVeld('cafe.naam', 'Naam van het café')}
       ${tekstVak('cafe.welkom', 'Welkomtekst (één of twee zinnen)', { rows: 2 })}
       ${tekstVak('cafe.welkomEn', 'Engelse vertaling (optioneel)', { rows: 2, hulp: 'Leeg laten = Engelstalige klanten zien ook de Nederlandse tekst.' })}
       <div class="veldrij"><span class="lbl">Logo</span>

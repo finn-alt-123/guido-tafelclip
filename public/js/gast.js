@@ -60,6 +60,10 @@ function toast(msg, isFout) {
 }
 const tafel = () => V && V.config.tafels.find((t) => t.id === TAFEL);
 const lopend = (soort) => V && V.live.meldingen.find((m) => m.soort === soort && isOpenMelding(m));
+/* Het personeel tikt onderweg meestal geen "Ik kom eraan" aan (ze lopen gewoon naar de tafel),
+   dus laten we de "we zijn onderweg"-kaart na een korte tijd vanzelf weer de gewone knop tonen. */
+const HERSTEL_MS = 30000;
+const lopendRecent = (soort) => { const m = lopend(soort); return m && Date.now() - m.ts < HERSTEL_MS ? m : null; };
 const actieveVerzoekjes = () => (V && V.config.verzoekjes.aan ? V.config.verzoekjes.items.filter((x) => x.aan && x.label) : []);
 /* Datums: de kern geeft Nederlands; voor Engels vertalen we de vaste woorden. */
 const DATUM_EN = { Vanavond: 'Tonight', Vandaag: 'Today', Morgen: 'Tomorrow', zo: 'Sun', ma: 'Mon', di: 'Tue', wo: 'Wed', do: 'Thu', vr: 'Fri', za: 'Sat', jan: 'Jan', feb: 'Feb', mrt: 'Mar', apr: 'Apr', mei: 'May', jun: 'Jun', jul: 'Jul', aug: 'Aug', sep: 'Sep', okt: 'Oct', nov: 'Nov', dec: 'Dec' };
@@ -134,7 +138,7 @@ function actiesHtml(c) {
   if (!V.open) {
     return `<section class="gesloten"><span class="ico">${I.maan}</span><div><strong>${esc(L(c.uren.tekst || 'We zijn nu gesloten.', 'We’re closed right now.'))}</strong><span>${L('De ober roepen kan weer als we open zijn.', 'You can call the waiter again when we’re open.')}</span></div></section>`;
   }
-  const ober = lopend('ober'); const afr = lopend('afrekenen');
+  const ober = lopendRecent('ober'); const afr = lopendRecent('afrekenen');
   const verzoekjes = actieveVerzoekjes();
   let html = '';
   if (ober) html += statusKaart(ober);
@@ -195,7 +199,6 @@ function pageHtml() {
       ${buurt ? `<section class="sectie" aria-labelledby="h-buurt"><h2 id="h-buurt">${L('In de buurt', 'Nearby')}</h2><div class="kaarten">${buurt}</div></section>` : ''}
     </main>
     <footer class="g-voet">
-      ${c.cafe.instagram ? `<p style="margin:0 0 10px">${L('Volg ons op Instagram', 'Follow us on Instagram')}: <strong>${esc(c.cafe.instagram)}</strong></p>` : ''}
       ${sociaalHtml(c)}
     </footer>
   </div>`;
@@ -268,6 +271,19 @@ function render() {
   if (!V.open && ui.sheet) closeSheet();
   app.innerHTML = pageHtml();
   renderSheet();
+  planHerstel();
+}
+
+/* Zodra de "we zijn onderweg"-kaart 30 s oud wordt, meteen herrenderen i.p.v. te wachten
+   op de volgende poll — zo verschijnt de gewone knop precies op tijd terug. */
+let herstelTimer = null;
+function planHerstel() {
+  clearTimeout(herstelTimer); herstelTimer = null;
+  if (!V) return;
+  const resterend = ['ober', 'afrekenen'].map((s) => lopend(s)).filter(Boolean)
+    .map((m) => HERSTEL_MS - (Date.now() - m.ts)).filter((ms) => ms > 0);
+  if (!resterend.length) return;
+  herstelTimer = setTimeout(() => { herstelTimer = null; render(); }, Math.max(250, Math.min(...resterend)));
 }
 
 /* ---------------- sheet openen / sluiten ---------------- */
