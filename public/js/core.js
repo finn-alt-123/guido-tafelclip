@@ -30,8 +30,12 @@ export function defaultConfig(now = Date.now()) {
     cafe: {
       naam: 'guido.',
       welkom: 'Fijn dat je er bent! Bestellen doe je gewoon bij ons, aan tafel.',
+      welkomEn: '',
       logo: '',
-      instagram: '@cafeguido'
+      instagram: '@cafeguido',
+      googleReviewUrl: '',
+      instagramUrl: '',
+      facebookUrl: ''
     },
     tafels: Array.from({ length: 12 }, (_, i) => ({ id: String(i + 1), naam: 'Tafel ' + (i + 1) })),
     beveiliging: { chips: false },
@@ -42,22 +46,22 @@ export function defaultConfig(now = Date.now()) {
       dagen: Array.from({ length: 7 }, () => ({ dicht: false, van: '11:00', tot: '01:00' }))
     },
     ober: { aan: true, redenen: ['Iets bestellen', 'Een vraagje'], wachttijd: 1 },
-    afrekenen: { aan: true, wijze: true, verdeling: true },
+    afrekenen: { aan: true, wijze: true },
     verzoekjes: {
       aan: true,
       items: [
-        { id: 'liedje', emoji: '🎵', label: 'Liedje aanvragen', tekst: true, hint: 'Artiest – titel', aan: true },
-        { id: 'kaars', emoji: '🕯️', label: 'Kaarsje aanvullen', tekst: false, hint: '', aan: true },
-        { id: 'lief', emoji: '💌', label: 'Lief berichtje naar de bar', tekst: true, hint: 'Jullie zijn top!', aan: true },
-        { id: 'water', emoji: '💧', label: 'Karafje water', tekst: false, hint: '', aan: true }
+        { id: 'liedje', emoji: '🎵', label: 'Liedje aanvragen', labelEn: '', tekst: true, hint: 'Artiest – titel', hintEn: '', aan: true },
+        { id: 'kaars', emoji: '🕯️', label: 'Kaarsje aanvullen', labelEn: '', tekst: false, hint: '', hintEn: '', aan: true },
+        { id: 'lief', emoji: '💌', label: 'Lief berichtje naar de bar', labelEn: '', tekst: true, hint: 'Jullie zijn top!', hintEn: '', aan: true },
+        { id: 'water', emoji: '💧', label: 'Karafje water', labelEn: '', tekst: false, hint: '', hintEn: '', aan: true }
       ]
     },
     wifi: { aan: false, naam: '', wachtwoord: '' },
     mededelingen: {
       aan: true,
       items: [
-        { id: 'karaoke', soort: 'event', titel: 'Karaoke-avond', tekst: 'Zet je stem klaar: de microfoon staat open voor iedereen.', datum: '2026-11-23', tijd: '19:00', aan: true },
-        { id: 'insta', soort: 'actie', titel: '5% korting', tekst: 'Post een foto op Instagram, tag @cafeguido en toon het aan de bar.', datum: '', tijd: '', aan: true }
+        { id: 'karaoke', soort: 'event', titel: 'Karaoke-avond', titelEn: '', tekst: 'Zet je stem klaar: de microfoon staat open voor iedereen.', tekstEn: '', afbeelding: '', datum: '2026-11-23', tijd: '19:00', aan: true },
+        { id: 'insta', soort: 'actie', titel: '5% korting', titelEn: '', tekst: 'Post een foto op Instagram, tag @cafeguido en toon het aan de bar.', tekstEn: '', afbeelding: '', datum: '', tijd: '', aan: true }
       ]
     },
     buurt: {
@@ -72,7 +76,7 @@ export function defaultConfig(now = Date.now()) {
 }
 
 export function defaultLive() {
-  return { rev: 1, meldingen: [], voorstellen: [], geweigerd: [], koppelen: null, stats: {} };
+  return { rev: 1, meldingen: [], voorstellen: [], geweigerd: [], koppelen: null, stats: {}, tafelScans: {} };
 }
 
 export const defaultState = (now = Date.now()) => ({ config: defaultConfig(now), live: defaultLive(now) });
@@ -90,11 +94,15 @@ export function migreer(state) {
   const basis = defaultConfig();
   const c = state.config;
   // versie 2 → 3: geen rekeningen, kassa of online betalen meer
-  if (c.rekening && !c.afrekenen) c.afrekenen = { aan: c.rekening.aan !== false, wijze: true, verdeling: true };
+  if (c.rekening && !c.afrekenen) c.afrekenen = { aan: c.rekening.aan !== false, wijze: true };
   for (const k of ['rekening', 'kassa', 'prijslijst']) delete c[k];
   c.tafels.forEach((t) => { delete t.lsTafel; });
   vulAan(c, { beveiliging: basis.beveiliging, uren: basis.uren, ober: basis.ober, afrekenen: basis.afrekenen, wifi: basis.wifi, buurt: basis.buurt, verzoekjes: { aan: true, items: [] }, mededelingen: { aan: true, items: [] } });
   if (!Array.isArray(c.uren.dagen) || c.uren.dagen.length !== 7) c.uren.dagen = basis.uren.dagen;
+  // oude teksten: eigen vertaling en afbeelding/GIF nog niet voorzien
+  vulAan(c.cafe, basis.cafe);
+  (c.mededelingen.items || []).forEach((m) => vulAan(m, { titelEn: '', tekstEn: '', afbeelding: '' }));
+  (c.verzoekjes.items || []).forEach((v) => vulAan(v, { labelEn: '', hintEn: '' }));
   for (const k of ['rekeningen', 'splits']) delete state.live[k];
   vulAan(state.live, defaultLive());
   return state;
@@ -206,7 +214,7 @@ export const RECHTEN = {
   gast: new Set(['ober', 'ober-reden', 'afrekenen', 'annuleer', 'verzoek']),
   personeel: new Set(['melding', 'opruimen', 'aan-tafel']),
   eigenaar: new Set(['config', 'pin', 'reset', 'voorstel', 'koppel-start', 'koppel-stop']),
-  intern: new Set(['systeem-melding', 'voorstellen-bij'])
+  intern: new Set(['systeem-melding', 'voorstellen-bij', 'scan'])
 };
 export function magActie(rol, type) {
   if (RECHTEN.intern.has(type)) return rol === 'intern';
@@ -310,9 +318,8 @@ export function apply(prev, action, now = Date.now()) {
       if (open) { result = open; raaktLive = false; break; }
       gastControle(state, now);
       const wijze = c.wijze && ['kaart', 'contant'].includes(a.wijze) ? a.wijze : '';
-      const verdeling = c.verdeling && ['samen', 'apart'].includes(a.verdeling) ? a.verdeling : '';
-      const delen = [wijze === 'kaart' ? 'Met de kaart' : wijze === 'contant' ? 'Contant' : '', verdeling === 'samen' ? 'samen' : verdeling === 'apart' ? 'apart' : ''].filter(Boolean);
-      result = melding(state, now, { soort: 'afrekenen', tafel: t.id, tafelNaam: t.naam, wijze, verdeling, tekst: delen.join(' · ') });
+      const delen = [wijze === 'kaart' ? 'Met de kaart' : wijze === 'contant' ? 'Contant' : ''].filter(Boolean);
+      result = melding(state, now, { soort: 'afrekenen', tafel: t.id, tafelNaam: t.naam, wijze, tekst: delen.join(' · ') });
       tel(state, now, 'afrekenen');
       break;
     }
@@ -342,6 +349,12 @@ export function apply(prev, action, now = Date.now()) {
     }
 
     /* ---------- server ---------- */
+    case 'scan': {
+      // elke geslaagde chip-tik (/sessie), gast én personeel — voor "meest gescande tafel"
+      const t = tafelVan(state, a);
+      state.live.tafelScans[t.id] = (state.live.tafelScans[t.id] || 0) + 1;
+      break;
+    }
     case 'systeem-melding': {
       const info = a.soort === 'info';
       result = melding(state, now, { soort: info ? 'info' : 'fout', tafel: String(a.tafel || ''), tafelNaam: a.tafelNaam || 'Systeem', tekst: tekst(a.tekst, 300) });
@@ -424,6 +437,9 @@ export function apply(prev, action, now = Date.now()) {
       if (!c || typeof c !== 'object' || !c.cafe || !Array.isArray(c.tafels) || !c.ober || !c.afrekenen || !c.verzoekjes || !c.mededelingen || !c.buurt || !c.uren || !Array.isArray(c.uren.dagen) || c.uren.dagen.length !== 7) fout('Ongeldige instellingen.', 'config');
       if (JSON.stringify(c).length > 1500000) fout('De instellingen zijn te groot. Kies een kleiner logo.', 'groot');
       if (c.cafe.logo && !/^data:image\/(png|jpeg|webp);base64,/.test(c.cafe.logo)) fout('Dit logo kan niet gebruikt worden. Kies een png- of jpg-bestand.', 'logo');
+      for (const m of c.mededelingen.items || []) {
+        if (m.afbeelding && !/^data:image\/(png|jpeg|webp|gif);base64,/.test(m.afbeelding)) fout('Deze afbeelding kan niet gebruikt worden. Kies een png-, jpg- of gif-bestand.', 'logo');
+      }
       const ids = new Set();
       for (const t of c.tafels) {
         t.id = tekst(t.id, 20); t.naam = tekst(t.naam, 40) || ('Tafel ' + t.id);

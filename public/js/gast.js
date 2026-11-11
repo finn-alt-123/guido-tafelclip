@@ -33,6 +33,8 @@ const FOUT_EN = {
   sessie: 'Hold your phone against the clip on your table again.', sun: 'Hold your phone against the clip on your table again.', net: 'No connection. Check your wifi or mobile data.'
 };
 const foutTekst = (err) => (taal === 'en' ? (FOUT_EN[err.code] || 'Something went wrong. Please try again.') : err.message);
+/** Eigen teksten van het café (welkomtekst, mededelingen, verzoekjes): Engels als het ingevuld is, anders gewoon Nederlands. */
+const kiesTaal = (nl, en) => (taal === 'en' && en ? en : nl);
 
 let store = null;
 let V = null; // huidige weergave (instellingen + meldingen van deze tafel)
@@ -44,8 +46,7 @@ const ui = {
   bezig: '',            // welke knop is bezig
   verzoek: null,
   tekst: '',
-  wijze: 'kaart',
-  verdeling: 'samen'
+  wijze: 'kaart'
 };
 
 /* ---------------- hulpjes ---------------- */
@@ -113,7 +114,7 @@ function statusKaart(m) {
     if (m.tekst) sub += ' · ' + esc(m.tekst);
   } else {
     const keuze = taal === 'en'
-      ? [m.wijze === 'kaart' ? 'By card' : m.wijze === 'contant' ? 'Cash' : '', m.verdeling === 'samen' ? 'together' : m.verdeling === 'apart' ? 'separately' : ''].filter(Boolean).join(' · ')
+      ? (m.wijze === 'kaart' ? 'By card' : m.wijze === 'contant' ? 'Cash' : '')
       : m.tekst;
     titel = onderweg ? L('We komen eraan met de rekening', 'We’re bringing the bill') : L('Je rekening is gevraagd', 'Bill requested');
     sub = (keuze ? esc(keuze) + '. ' : '') + (onderweg ? L('Tot zo!', 'See you in a moment!') : L('Je betaalt aan tafel, bij de ober.', 'You pay at the table, with the waiter.'));
@@ -165,11 +166,14 @@ function pageHtml() {
   const nieuws = visibleNews(c);
   const med = nieuws.mededelingen.map((m) => {
     const b = m.soort === 'event' ? dateBadge(m.datum) : null;
-    const badge = b
-      ? `<div class="datum" aria-hidden="true"><div class="d">${b.dag}</div><div class="n">${b.nr}</div><div class="m">${b.maand}</div></div>`
-      : `<div class="badge-actie" aria-hidden="true">${m.soort === 'event' ? 'Event' : L('Actie', 'Deal')}</div>`;
+    const badge = m.afbeelding
+      ? `<button type="button" class="badge-afb" data-a="vergroot" data-src="${esc(m.afbeelding)}" aria-label="${esc(L('Afbeelding vergroten', 'Enlarge image'))}"><img src="${esc(m.afbeelding)}" alt=""></button>`
+      : b
+        ? `<div class="datum" aria-hidden="true"><div class="d">${b.dag}</div><div class="n">${b.nr}</div><div class="m">${b.maand}</div></div>`
+        : `<div class="badge-actie" aria-hidden="true">${m.soort === 'event' ? 'Event' : L('Actie', 'Deal')}</div>`;
     const meta = m.soort === 'event' ? dateLabel(m.datum, m.tijd) : (m.datum ? L('Loopt tot ', 'Until ') + (taal === 'en' ? dateLabel(m.datum, '') : dateLabel(m.datum, '').toLowerCase()) : '');
-    return `<article class="kaart">${badge}<div><h3>${esc(m.titel)}</h3>${meta ? `<div class="meta">${esc(meta)}</div>` : ''}${m.tekst ? `<p>${esc(m.tekst)}</p>` : ''}</div></article>`;
+    const titel = kiesTaal(m.titel, m.titelEn); const tekst = kiesTaal(m.tekst, m.tekstEn);
+    return `<article class="kaart">${badge}<div><h3>${esc(titel)}</h3>${meta ? `<div class="meta">${esc(meta)}</div>` : ''}${tekst ? `<p>${esc(tekst)}</p>` : ''}</div></article>`;
   }).join('');
   const buurt = nieuws.buurt.map((b) => {
     const meta = [dateLabel(b.datum, b.tijd), b.plaats].filter(Boolean).join(' · ');
@@ -182,7 +186,7 @@ function pageHtml() {
   return `${strook}<div class="g-app">
     <header class="g-top">
       <div class="g-top-rij">${woordmerk(c)}<div class="g-top-rechts"><span class="tafel-pil">${esc(t.naam)}</span>${taalKnop()}</div></div>
-      ${c.cafe.welkom ? `<p class="g-welkom">${esc(c.cafe.welkom)}</p>` : ''}
+      ${(() => { const w = kiesTaal(c.cafe.welkom, c.cafe.welkomEn); return w ? `<p class="g-welkom">${esc(w)}</p>` : ''; })()}
     </header>
     <main class="g-main">
       ${actiesHtml(c)}
@@ -191,9 +195,20 @@ function pageHtml() {
       ${buurt ? `<section class="sectie" aria-labelledby="h-buurt"><h2 id="h-buurt">${L('In de buurt', 'Nearby')}</h2><div class="kaarten">${buurt}</div></section>` : ''}
     </main>
     <footer class="g-voet">
-      ${c.cafe.instagram ? `${L('Volg ons op Instagram', 'Follow us on Instagram')}: <strong>${esc(c.cafe.instagram)}</strong>` : ''}
+      ${c.cafe.instagram ? `<p style="margin:0 0 10px">${L('Volg ons op Instagram', 'Follow us on Instagram')}: <strong>${esc(c.cafe.instagram)}</strong></p>` : ''}
+      ${sociaalHtml(c)}
     </footer>
   </div>`;
+}
+
+function sociaalHtml(c) {
+  const knoppen = [
+    c.cafe.googleReviewUrl && { url: c.cafe.googleReviewUrl, ico: I.ster, label: L('Google Reviews', 'Google Reviews') },
+    c.cafe.instagramUrl && { url: c.cafe.instagramUrl, ico: I.instagram, label: 'Instagram' },
+    c.cafe.facebookUrl && { url: c.cafe.facebookUrl, ico: I.facebook, label: 'Facebook' }
+  ].filter(Boolean);
+  if (!knoppen.length) return '';
+  return `<div class="sociaal-rij">${knoppen.map((k) => `<a class="sociaal-knop" href="${esc(k.url)}" target="_blank" rel="noopener noreferrer">${k.ico}<span>${esc(k.label)}</span></a>`).join('')}</div>`;
 }
 
 /* ---------------- sheets ---------------- */
@@ -212,7 +227,6 @@ function afrekenSheet() {
   const c = V.config.afrekenen;
   return kop(L('Afrekenen', 'Pay')) + `<div class="sheet-inhoud">
     ${c.wijze ? seg('wijze', L('Hoe wil je betalen?', 'How would you like to pay?'), [['kaart', L('Met de kaart', 'By card')], ['contant', L('Contant', 'Cash')]]) : ''}
-    ${c.verdeling ? seg('verdeling', L('Samen of apart?', 'Together or separately?'), [['samen', L('Alles samen', 'All together')], ['apart', L('Elk apart', 'Separately')]]) : ''}
     ${foutBlok()}
     <button class="btn btn-geel btn-vol" data-a="vraag-rekening" ${ui.bezig ? 'disabled' : ''}>${L('Vraag de rekening', 'Ask for the bill')}</button>
     <p class="proto">${L('Je betaalt aan tafel, bij de ober. Zo weten we meteen wat we moeten meebrengen.', 'You pay at the table, with the waiter. This way we know what to bring.')}</p>
@@ -227,14 +241,16 @@ function verzoekSheet() {
   }
   const it = items.find((x) => x.id === ui.verzoek);
   if (ui.stap === 'tekst' && it) {
-    return kop(it.label, true) + `<div class="sheet-inhoud">
-      <label class="sr" for="vz-tekst">${esc(it.label)}</label>
-      <textarea class="veld" id="vz-tekst" rows="3" maxlength="200" placeholder="${esc(taal === 'en' ? 'Type here…' : (it.hint || 'Typ hier…'))}">${esc(ui.tekst)}</textarea>
+    const label = kiesTaal(it.label, it.labelEn);
+    const hint = kiesTaal(it.hint, it.hintEn) || L('Typ hier…', 'Type here…');
+    return kop(label, true) + `<div class="sheet-inhoud">
+      <label class="sr" for="vz-tekst">${esc(label)}</label>
+      <textarea class="veld" id="vz-tekst" rows="3" maxlength="200" placeholder="${esc(hint)}">${esc(ui.tekst)}</textarea>
       ${foutBlok()}
       <button class="btn btn-geel btn-vol" data-a="stuur-verzoek" ${ui.bezig ? 'disabled' : ''}>${L('Versturen naar de bar', 'Send to the bar')}</button>
     </div>`;
   }
-  const lijst = items.map((x) => `<button class="optie" data-a="kies-verzoek" data-v="${esc(x.id)}" ${ui.bezig ? 'disabled' : ''}><span class="em" aria-hidden="true">${esc(x.emoji)}</span><span>${esc(x.label)}</span><span class="pijl">${x.tekst ? I.pijl.replace('<svg', '<svg width="20" height="20"') : ''}</span></button>`).join('');
+  const lijst = items.map((x) => `<button class="optie" data-a="kies-verzoek" data-v="${esc(x.id)}" ${ui.bezig ? 'disabled' : ''}><span class="em" aria-hidden="true">${esc(x.emoji)}</span><span>${esc(kiesTaal(x.label, x.labelEn))}</span><span class="pijl">${x.tekst ? I.pijl.replace('<svg', '<svg width="20" height="20"') : ''}</span></button>`).join('');
   return kop(L('Verzoekje', 'Request')) + `<div class="sheet-inhoud"><p class="muted" style="margin:0">${L('Waarmee kunnen we je blij maken?', 'How can we make your evening?')}</p>${foutBlok()}<div class="opties">${lijst}</div></div>`;
 }
 
@@ -265,6 +281,27 @@ function openSheet(naam) {
   setTimeout(() => { const f = sheetEl.querySelector('.sluit'); if (f) f.focus({ preventScroll: true }); }, 260);
   document.body.style.overflow = 'hidden';
 }
+/* ---------------- lightbox: afbeelding van een mededeling vergroten ---------------- */
+let lightboxEl = null;
+function openLightbox(src) {
+  if (!src) return;
+  closeLightbox();
+  lightboxEl = document.createElement('div');
+  lightboxEl.className = 'lightbox';
+  lightboxEl.innerHTML = `<button type="button" class="lightbox-sluit" aria-label="${esc(L('Sluiten', 'Close'))}">${I.sluit}</button><img src="${esc(src)}" alt="">`;
+  lightboxEl.addEventListener('click', (e) => { if (e.target === lightboxEl || e.target.closest('.lightbox-sluit')) closeLightbox(); });
+  document.body.appendChild(lightboxEl);
+  document.body.style.overflow = 'hidden';
+  requestAnimationFrame(() => lightboxEl && lightboxEl.classList.add('open'));
+}
+function closeLightbox() {
+  if (!lightboxEl) return;
+  const el = lightboxEl; lightboxEl = null;
+  el.classList.remove('open');
+  document.body.style.overflow = ui.sheet ? 'hidden' : '';
+  setTimeout(() => el.remove(), 200);
+}
+
 function closeSheet() {
   if (!ui.sheet) return;
   ui.sheet = null;
@@ -300,6 +337,7 @@ async function onClick(e) {
       case 'open': openSheet(el.dataset.s); break;
       case 'sluit': closeSheet(); break;
       case 'terug': zetStap(''); break;
+      case 'vergroot': openLightbox(el.dataset.src); break;
 
       /* ober: één tik */
       case 'roep':
@@ -315,13 +353,13 @@ async function onClick(e) {
       /* afrekenen */
       case 'afrekenen': {
         const c = V.config.afrekenen;
-        if (c.wijze || c.verdeling) openSheet('afrekenen');
+        if (c.wijze) openSheet('afrekenen');
         else { await doe('afrekenen', { type: 'afrekenen' }); toast(L('We komen eraan met de rekening.', 'We’re bringing the bill.')); }
         break;
       }
       case 'kies': ui[el.dataset.k] = el.dataset.v; renderSheet(); break;
       case 'vraag-rekening':
-        await doe('afrekenen', { type: 'afrekenen', wijze: ui.wijze, verdeling: ui.verdeling });
+        await doe('afrekenen', { type: 'afrekenen', wijze: ui.wijze });
         closeSheet(); toast(L('De bar weet het. We komen eraan met de rekening.', 'The bar has been told. We’re bringing the bill.'));
         break;
 
@@ -356,7 +394,7 @@ async function onClick(e) {
 
 document.addEventListener('click', onClick);
 backdrop.addEventListener('click', closeSheet);
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (lightboxEl) closeLightbox(); else closeSheet(); } });
 sheetEl.addEventListener('input', (e) => { if (e.target.id === 'vz-tekst') ui.tekst = e.target.value; });
 
 /* ---------------- opstarten ---------------- */

@@ -29,5 +29,8 @@ export const I = {
   maan: svg('<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>'),
   grafiek: svg('<path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/>'),
   klok: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
-  stil: svg('<path d="M4 10v4h4l5 4V6L8 10z"/><path d="M17 10l4 4M21 10l-4 4"/>')
+  stil: svg('<path d="M4 10v4h4l5 4V6L8 10z"/><path d="M17 10l4 4M21 10l-4 4"/>'),
+  ster: svg('<path d="M12 3.5l2.6 5.4 5.9.9-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.2 5.9-.9z"/>'),
+  instagram: svg('<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="16.8" cy="7.2" r=".6" fill="currentColor"/>'),
+  facebook: svg('<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M15 7.3c-.7-.3-1.4-.3-2 0-.9.4-1.5 1.3-1.5 2.5V11"/><path d="M8.7 11h6"/><path d="M11.5 11v8.5"/>')
 };

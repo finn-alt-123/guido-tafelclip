@@ -20,7 +20,6 @@ const TABS = [
   { id: 'klantscherm', naam: 'Knoppen & uren', ico: I.scherm, rol: 'eigenaar', groep: 'Wat de klant ziet' },
   { id: 'mededelingen', naam: 'Mededelingen', ico: I.megafoon, rol: 'eigenaar', groep: 'Wat de klant ziet' },
   { id: 'buurt', naam: 'In de buurt', ico: I.kaart, rol: 'eigenaar', groep: 'Wat de klant ziet' },
-  { id: 'tafels', naam: 'Tafels & clips', ico: I.tafel, rol: 'eigenaar', groep: 'Opzet' },
   { id: 'personeel', naam: 'Personeel', ico: I.hand, rol: 'eigenaar', gedeeld: true, groep: 'Opzet' },
   { id: 'instellingen', naam: 'Instellingen', ico: I.tandwiel, rol: 'eigenaar', groep: 'Opzet' }
 ];
@@ -231,11 +230,23 @@ function cijfersTab() {
       <div class="balken" role="img" aria-label="Gebruik per dag, laatste 30 dagen">${balken}</div>
       <div class="balken-as"><span>${esc(dateLabel(dagen[0], ''))}</span><span>vandaag</span></div></section>
     ${rijen ? `<section class="blok"><div class="tabel-wrap"><table class="tabel"><thead><tr><th>Dag</th><th>Ober</th><th>Afrekenen</th><th>Verzoekjes</th><th>Geannuleerd</th><th>Reactietijd</th></tr></thead><tbody>${rijen}</tbody></table></div>
-      <p class="small muted" style="margin:12px 0 0">Reactietijd = van de tik van de klant tot iemand “Ik kom eraan” of “Klaar” tikt.</p></section>` : '<div class="leeg"><span class="hand">Nog geen cijfers.</span>Ze verschijnen zodra de eerste klant een clip gebruikt.</div>'}`;
+      <p class="small muted" style="margin:12px 0 0">Reactietijd = van de tik van de klant tot iemand “Ik kom eraan” of “Klaar” tikt.</p></section>` : '<div class="leeg"><span class="hand">Nog geen cijfers.</span>Ze verschijnen zodra de eerste klant een clip gebruikt.</div>'}
+    ${scansBlok()}`;
 }
 
-/* ---------------- tafels ---------------- */
-function tafelsTab() {
+function scansBlok() {
+  const scans = V.live.tafelScans || {};
+  const namen = Object.fromEntries(draft.tafels.map((t) => [t.id, t.naam]));
+  const rijen = Object.keys(scans).sort((a, b) => scans[b] - scans[a]).slice(0, 10)
+    .map((id) => `<tr><td>${esc(namen[id] || id)}</td><td>${scans[id]}</td></tr>`).join('');
+  return `<section class="blok"><h2>Meest gescande tafels</h2><p class="uitleg">Hoe vaak de clip van elke tafel aangetikt is, sinds het begin.</p>
+    ${rijen ? `<div class="tabel-wrap"><table class="tabel"><thead><tr><th>Tafel</th><th>Keer gescand</th></tr></thead><tbody>${rijen}</tbody></table></div>`
+      : '<div class="leeg"><span class="hand">Nog geen scans.</span>Ze verschijnen zodra een klant of personeelslid een clip aantikt.</div>'}
+  </section>`;
+}
+
+/* ---------------- tafels (sectie binnen Instellingen) ---------------- */
+function tafelsBlok() {
   if (!draft.tafels.some((t) => t.id === ui.tafel)) ui.tafel = draft.tafels[0] ? draft.tafels[0].id : '';
   const idx = draft.tafels.findIndex((t) => t.id === ui.tafel);
   const lijst = draft.tafels.map((t) => {
@@ -269,8 +280,8 @@ function tafelsTab() {
       </section>
       <section class="blok"><div class="blok-kop"><div><h2>Tafel verwijderen</h2><p>De clip met deze code werkt dan niet meer.</p></div><button class="btn btn-gevaar btn-klein" data-a="tafel-weg">Verwijderen</button></div></section>`;
   }
-  return kop('Tafels & clips', 'Elke tafel heeft een eigen clip. Kies een tafel om de link voor de chip te zien.') + `
-    <div class="tafel-grid">
+  return `<h3 class="groep" style="margin-top:0">Tafels &amp; clips</h3><p class="uitleg" style="margin:-4px 0 14px">Elke tafel heeft een eigen clip. Kies een tafel om de link voor de chip te zien.</p>
+    <div class="tafel-grid" style="margin-bottom:16px">
       <div><div class="tafel-lijst">${lijst}</div><button class="btn btn-licht btn-klein btn-vol" style="margin-top:10px" data-a="tafel-plus">${I.plus} Tafel toevoegen</button></div>
       <div>${detail}</div>
     </div>`;
@@ -299,6 +310,7 @@ function klantschermTab() {
     <div class="li-velden">
       <div class="grid2">${tekstVeld('cafe.naam', 'Naam van het café')}${tekstVeld('cafe.instagram', 'Instagram', { placeholder: '@cafeguido' })}</div>
       ${tekstVak('cafe.welkom', 'Welkomtekst (één of twee zinnen)', { rows: 2 })}
+      ${tekstVak('cafe.welkomEn', 'Engelse vertaling (optioneel)', { rows: 2, hulp: 'Leeg laten = Engelstalige klanten zien ook de Nederlandse tekst.' })}
       <div class="veldrij"><span class="lbl">Logo</span>
         <div class="logo-voorbeeld"><div class="vak">${logo}</div>
           <div class="knoppen">
@@ -306,6 +318,13 @@ function klantschermTab() {
             ${c.cafe.logo ? '<button class="btn btn-tekst btn-klein" data-a="logo-weg">Logo verwijderen</button>' : ''}
           </div></div>
         <span class="hulp">Gebruik een witte of lichte versie, het komt op de groene balk.</span></div>
+    </div></section>`;
+
+  const sociaal = `<section class="blok"><h2>Knoppen onderaan het scherm</h2><p class="uitleg">Nette knoppen naast elkaar onderaan het klantscherm. Enkel ingevuld = enkel zichtbaar.</p>
+    <div class="grid3">
+      ${tekstVeld('cafe.googleReviewUrl', 'Link naar Google Reviews', { type: 'url', placeholder: 'https://g.page/r/…' })}
+      ${tekstVeld('cafe.instagramUrl', 'Link naar Instagram', { type: 'url', placeholder: 'https://instagram.com/cafeguido' })}
+      ${tekstVeld('cafe.facebookUrl', 'Link naar Facebook', { type: 'url', placeholder: 'https://facebook.com/cafeguido' })}
     </div></section>`;
 
   const DAGNAMEN = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag'];
@@ -326,7 +345,6 @@ function klantschermTab() {
   const afrekenen = moduleBlok('afrekenen', 'Afrekenen', 'De klant vraagt de rekening. Betalen gebeurt aan tafel, zoals altijd: jij ziet wie betaald heeft.', `
     <div>
       <div class="schakel-rij"><div><strong>Vraag: met de kaart of contant?</strong><span>Zo weet je of je de betaalterminal moet meenemen.</span></div>${schakel('afrekenen.wijze', 'Kaart of contant vragen')}</div>
-      <div class="schakel-rij"><div><strong>Vraag: samen of apart?</strong><span>Zo kan je de rekening al splitsen in de kassa.</span></div>${schakel('afrekenen.verdeling', 'Samen of apart vragen')}</div>
     </div>`);
 
   const vz = c.verzoekjes.items.map((it, i) => `<div class="lijst-item ${it.aan ? '' : 'uitgeschakeld'}">
@@ -335,8 +353,10 @@ function klantschermTab() {
       ${knop('op', I.omhoog, 'Hoger', `data-path="verzoekjes.items" data-i="${i}" ${i === 0 ? 'disabled' : ''}`)}${knop('neer', I.omlaag, 'Lager', `data-path="verzoekjes.items" data-i="${i}" ${i === c.verzoekjes.items.length - 1 ? 'disabled' : ''}`)}${knop('weg', I.weg, 'Verwijderen', `data-path="verzoekjes.items" data-i="${i}"`)}</div>
     <div class="li-velden">
       <div style="display:grid;grid-template-columns:80px 1fr;gap:12px">${tekstVeld(`verzoekjes.items.${i}.emoji`, 'Icoon', { extra: 'class="emoji-veld" maxlength="4"' })}${tekstVeld(`verzoekjes.items.${i}.label`, 'Knoptekst', { placeholder: 'Bv. Liedje aanvragen' })}</div>
+      ${tekstVeld(`verzoekjes.items.${i}.labelEn`, 'Knoptekst in het Engels (optioneel)', { placeholder: 'Bv. Request a song' })}
       <div class="schakel-rij" style="border:0;padding:0"><div><strong>Klant typt er iets bij</strong><span>Bv. welk liedje of welk berichtje.</span></div>${schakel(`verzoekjes.items.${i}.tekst`, 'Klant typt er iets bij')}</div>
       ${it.tekst ? tekstVeld(`verzoekjes.items.${i}.hint`, 'Voorbeeldtekst in het vak', { placeholder: 'Bv. Artiest – titel' }) : ''}
+      ${it.tekst ? tekstVeld(`verzoekjes.items.${i}.hintEn`, 'Voorbeeldtekst in het Engels (optioneel)', { placeholder: 'Bv. Artist – title' }) : ''}
     </div></div>`).join('');
   const verzoekjes = moduleBlok('verzoekjes', 'Verzoekjes', 'Kleine vragen aan de bar: een liedje, een kaarsje, een lief woordje.', `
     <div class="lijst">${vz}</div>
@@ -345,7 +365,7 @@ function klantschermTab() {
   const wifi = moduleBlok('wifi', 'Wifi', 'Toont de naam en het wachtwoord van de gastenwifi, met een knop om te kopiëren.', `
     <div class="grid2">${tekstVeld('wifi.naam', 'Naam van het netwerk')}${tekstVeld('wifi.wachtwoord', 'Wachtwoord', { hulp: 'Iedereen die een clip aantikt, kan dit lezen. Gebruik enkel de gastenwifi.' })}</div>`);
 
-  return kop('Knoppen & uren', 'Kies wat klanten kunnen doen als ze de clip aantikken. Alles wordt meteen bewaard.') + algemeen + uren + ober + afrekenen + verzoekjes + wifi;
+  return kop('Knoppen & uren', 'Kies wat klanten kunnen doen als ze de clip aantikken. Alles wordt meteen bewaard.') + algemeen + sociaal + uren + ober + afrekenen + verzoekjes + wifi;
 }
 
 /* ---------------- mededelingen ---------------- */
@@ -367,11 +387,20 @@ function mededelingenTab() {
           <div class="veldrij"><label for="f-${p}.soort">Soort</label><select id="f-${p}.soort" data-bind="${p}.soort"><option value="event" ${event ? 'selected' : ''}>Event (met datum)</option><option value="actie" ${!event ? 'selected' : ''}>Actie of korting</option></select></div>
           ${tekstVeld(p + '.titel', 'Titel', { placeholder: event ? 'Bv. Karaoke-avond' : 'Bv. 5% korting' })}
         </div>
+        ${tekstVeld(p + '.titelEn', 'Titel in het Engels (optioneel)', { placeholder: event ? 'Bv. Karaoke night' : 'Bv. 5% off' })}
         ${tekstVak(p + '.tekst', 'Korte uitleg', { rows: 2 })}
+        ${tekstVak(p + '.tekstEn', 'Korte uitleg in het Engels (optioneel)', { rows: 2 })}
         <div class="grid2">
           ${tekstVeld(p + '.datum', event ? 'Datum' : 'Loopt tot (optioneel)', { type: 'date', hulp: 'Na deze dag verdwijnt het vanzelf.' })}
           ${event ? tekstVeld(p + '.tijd', 'Uur', { type: 'time' }) : ''}
         </div>
+        <div class="veldrij"><span class="lbl">Afbeelding of gif (optioneel)</span>
+          <div class="logo-voorbeeld"><div class="vak">${m.afbeelding ? `<img src="${esc(m.afbeelding)}" alt="">` : '<span class="muted small">Geen</span>'}</div>
+            <div class="knoppen">
+              <label class="btn btn-licht btn-klein" style="cursor:pointer">Afbeelding kiezen<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" data-a="mededeling-afbeelding" data-i="${i}" class="sr"></label>
+              ${m.afbeelding ? `<button class="btn btn-tekst btn-klein" data-a="mededeling-afbeelding-weg" data-i="${i}">Verwijderen</button>` : ''}
+            </div></div>
+          <span class="hulp">Komt als klein, aantikbaar beeld op de kaart in plaats van het woordje “Actie”.</span></div>
       </div></div>`;
   }).join('');
   return kop('Mededelingen', 'Events en acties van het café zelf, bv. een karaoke-avond of korting bij een Instagram-post.') +
@@ -434,7 +463,7 @@ function instellingenTab() {
     <div class="knoppen-rij" style="margin-top:10px">${knopBezig('geheim-uit', 'Sleutel bewaren', 'data-soort="uit"')}</div>
   </section>`;
 
-  return kop('Instellingen') + statusBlok + sunBlok + uitBlok + `
+  return kop('Instellingen') + tafelsBlok() + statusBlok + sunBlok + uitBlok + `
     ${!online ? `<section class="blok"><h2>Pincode beheer</h2><p class="uitleg">4 tot 8 cijfers.</p>
       <form id="pin-form" class="knoppen-rij" autocomplete="off"><label class="sr" for="nieuwe-pin">Nieuwe pincode</label><input type="password" id="nieuwe-pin" inputmode="numeric" pattern="[0-9]*" maxlength="8" style="max-width:200px" placeholder="Nieuwe pincode"><button class="btn btn-groen btn-klein" type="submit">Wijzigen</button></form></section>` : ''}
     <section class="blok"><h2>Reservekopie</h2><p class="uitleg">Download je instellingen of zet ze over naar een ander café of toestel.</p>
@@ -629,7 +658,6 @@ async function extraKlik(a, el) {
    ============================================================ */
 function mainHtml() {
   switch (ui.tab) {
-    case 'tafels': return tafelsTab();
     case 'klantscherm': return klantschermTab();
     case 'mededelingen': return mededelingenTab();
     case 'buurt': return buurtTab();
@@ -729,7 +757,7 @@ function onUpdate(v) {
   if (!ingelogd) return;
   if (eerste || !document.getElementById('main')) { renderAll(); return; }
   renderNav();
-  if (['meldingen', 'cijfers', 'tafels', 'personeel', 'instellingen'].includes(ui.tab) && !typt && !ui.bezig) renderMain();
+  if (['meldingen', 'cijfers', 'personeel', 'instellingen'].includes(ui.tab) && !typt && !ui.bezig) renderMain();
 }
 
 /* ============================================================
@@ -781,6 +809,35 @@ function leesLogo(file) {
     const img = new Image();
     img.onload = () => {
       const sc = Math.min(1, 480 / img.width, 160 / img.height);
+      const cv = document.createElement('canvas');
+      cv.width = Math.max(1, Math.round(img.width * sc)); cv.height = Math.max(1, Math.round(img.height * sc));
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      URL.revokeObjectURL(url);
+      let data = cv.toDataURL('image/png');
+      if (data.length > 300000) data = cv.toDataURL('image/webp', 0.9);
+      resolve(data);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Dit bestand kan niet gelezen worden.')); };
+    img.src = url;
+  });
+}
+
+function leesMededelingAfbeelding(file) {
+  return new Promise((resolve, reject) => {
+    if (!/^image\/(png|jpeg|webp|gif)$/.test(file.type)) { reject(new Error('Kies een png-, jpg-, webp- of gif-bestand.')); return; }
+    if (file.type === 'image/gif') {
+      // GIF niet via canvas: dat zou de animatie plat maken. Enkel een grootte-check.
+      if (file.size > 1_500_000) { reject(new Error('Deze gif is te groot (max. 1,5 MB).')); return; }
+      const lezer = new FileReader();
+      lezer.onload = () => resolve(lezer.result);
+      lezer.onerror = () => reject(new Error('Dit bestand kan niet gelezen worden.'));
+      lezer.readAsDataURL(file);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const sc = Math.min(1, 240 / img.width, 240 / img.height);
       const cv = document.createElement('canvas');
       cv.width = Math.max(1, Math.round(img.width * sc)); cv.height = Math.max(1, Math.round(img.height * sc));
       cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
@@ -860,6 +917,7 @@ async function onClick(e) {
       getPath(draft, path).splice(i, 1); wijzig(); renderMain(); break;
     }
     case 'logo-weg': draft.cafe.logo = ''; wijzig(); renderMain(); break;
+    case 'mededeling-afbeelding-weg': draft.mededelingen.items[i].afbeelding = ''; wijzig(); renderMain(); break;
     case 'csv': {
       const stats = V.live.stats || {};
       const regels = ['dag;ober;afrekenen;verzoekjes;geannuleerd;gemiddelde reactietijd (s)'].concat(Object.keys(stats).sort().map((k) => { const x = stats[k]; return [k, x.ober || 0, x.afrekenen || 0, x.verzoek || 0, x.geannuleerd || 0, x.reactieN ? Math.round(x.reactieS / x.reactieN) : ''].join(';'); }));
@@ -906,6 +964,12 @@ async function onChange(e) {
   }
   if (el.dataset.a === 'logo' && el.files && el.files[0]) {
     try { draft.cafe.logo = await leesLogo(el.files[0]); wijzig(); renderMain(); }
+    catch (err) { toast(err.message, true); }
+    return;
+  }
+  if (el.dataset.a === 'mededeling-afbeelding' && el.files && el.files[0]) {
+    const i = Number(el.dataset.i);
+    try { draft.mededelingen.items[i].afbeelding = await leesMededelingAfbeelding(el.files[0]); wijzig(); renderMain(); }
     catch (err) { toast(err.message, true); }
     return;
   }

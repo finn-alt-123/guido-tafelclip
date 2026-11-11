@@ -120,10 +120,12 @@ img { max-width: 100%; }
 .gesloten .ico svg, .wifi .ico svg { width: 24px; height: 24px; }
 .gesloten strong { display: block; font-size: 17px; }
 .gesloten span { font-size: 14.5px; color: var(--muted); }
-.wifi-tekst { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.wifi-tekst strong { font-size: 15.5px; overflow-wrap: anywhere; }
-.wifi-tekst code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 15px; color: var(--muted); overflow-wrap: anywhere; user-select: all; }
+.wifi { flex-wrap: wrap; }
+.wifi-tekst { flex: 1 1 140px; min-width: 0; display: flex; flex-direction: column; }
+.wifi-tekst strong { font-size: 15.5px; overflow-wrap: anywhere; word-break: break-word; }
+.wifi-tekst code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 15px; color: var(--muted); overflow-wrap: anywhere; word-break: break-word; user-select: all; }
 .wifi-tekst span { font-size: 14px; color: var(--muted); }
+.wifi > .btn { flex: none; }
 @keyframes puls { 0% { box-shadow: 0 0 0 0 rgba(245, 207, 53, .7); } 70% { box-shadow: 0 0 0 10px rgba(245, 207, 53, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 207, 53, 0); } }
 
 .acties { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -156,14 +158,24 @@ img { max-width: 100%; }
 .datum .n { font-size: 24px; font-weight: 800; }
 .datum .m { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--yellow); font-weight: 700; }
 .badge-actie { flex: none; width: 56px; height: 56px; border-radius: 12px; background: var(--yellow); display: grid; place-items: center; font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+.badge-afb { flex: none; width: 56px; height: 56px; border-radius: 12px; overflow: hidden; border: 0; padding: 0; background: var(--soft); cursor: pointer; }
+.badge-afb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .badge-buurt { flex: none; width: 56px; height: 56px; border-radius: 12px; background: var(--soft); color: var(--green); display: grid; place-items: center; }
 .badge-buurt svg { width: 26px; height: 26px; }
 
 .g-voet { text-align: center; padding: 18px 24px calc(28px + env(safe-area-inset-bottom)); color: var(--muted); font-size: 14px; }
+.sociaal-rij { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.sociaal-knop { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; background: var(--card); box-shadow: var(--shadow); color: var(--ink); font-weight: 600; font-size: 14px; text-decoration: none; }
+.sociaal-knop svg { width: 18px; height: 18px; flex: none; }
 
 /* ---------- bottom sheet ---------- */
 .achtergrond { position: fixed; inset: 0; background: rgba(15, 30, 5, .45); z-index: 40; opacity: 0; transition: opacity .2s ease; }
 .achtergrond.open { opacity: 1; }
+.lightbox { position: fixed; inset: 0; background: rgba(10, 18, 4, .88); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 24px; opacity: 0; transition: opacity .2s ease; }
+.lightbox.open { opacity: 1; }
+.lightbox img { max-width: 100%; max-height: 100%; border-radius: 12px; box-shadow: 0 10px 40px rgba(0, 0, 0, .4); }
+.lightbox-sluit { position: absolute; top: calc(16px + env(safe-area-inset-top)); right: 16px; width: 44px; height: 44px; border: 0; border-radius: 12px; background: rgba(255, 255, 255, .15); color: #fff; display: grid; place-items: center; }
+.lightbox-sluit svg { width: 22px; height: 22px; }
 .sheet { position: fixed; left: 50%; bottom: 0; width: 100%; max-width: 480px; transform: translate(-50%, 100%); background: var(--ground); border-radius: 24px 24px 0 0; z-index: 50; max-height: 90dvh; display: flex; flex-direction: column; transition: transform .25s cubic-bezier(.2, .8, .2, 1); box-shadow: 0 -8px 30px rgba(0, 0, 0, .15); }
 .sheet.open { transform: translate(-50%, 0); }
 .sheet-kop { display: flex; align-items: center; gap: 8px; padding: 10px 12px 6px 20px; position: relative; }

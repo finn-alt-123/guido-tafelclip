@@ -195,6 +195,7 @@ export async function routeApi(storage, env, req) {
         return fout('Tik op de clip op je tafel.', 401, 'sessie');
       }
       if (!state.config.tafels.some((t) => t.id === tafel)) return fout('Deze tafel bestaat niet (meer).', 404, 'tafel');
+      await doeActie(storage, { type: 'scan', tafel }, 'intern');
       // ober tikt de clip aan → oproep afvinken
       let afgevinkt = 0;
       if (isPersoneel(w)) {
