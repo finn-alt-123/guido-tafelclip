@@ -1,0 +1,15 @@
+{
+  "name": "guido. team",
+  "short_name": "guido.",
+  "description": "Meldingen van de tafelclips voor het personeel van café guido.",
+  "start_url": "/beheer.html#meldingen",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#174B00",
+  "theme_color": "#174B00",
+  "lang": "nl",
+  "icons": [
+    { "src": "/img/icoon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/img/icoon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

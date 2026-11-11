@@ -1,0 +1,11 @@
+{
+  "name": "guido-tafelclip",
+  "version": "3.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Tafelclip (NFC) voor café guido.: klantscherm, meldingen en beheer",
+  "dependencies": {
+    "@netlify/blobs": "^11.1.7",
+    "web-push": "^3.6.7"
+  }
+}
