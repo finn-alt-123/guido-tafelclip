@@ -32,5 +32,6 @@ export const I = {
   stil: svg('<path d="M4 10v4h4l5 4V6L8 10z"/><path d="M17 10l4 4M21 10l-4 4"/>'),
   ster: svg('<path d="M12 3.5l2.6 5.4 5.9.9-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.2 5.9-.9z"/>'),
   instagram: svg('<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="16.8" cy="7.2" r=".6" fill="currentColor"/>'),
-  facebook: svg('<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M15 7.3c-.7-.3-1.4-.3-2 0-.9.4-1.5 1.3-1.5 2.5V11"/><path d="M8.7 11h6"/><path d="M11.5 11v8.5"/>')
+  facebook: svg('<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M15 7.3c-.7-.3-1.4-.3-2 0-.9.4-1.5 1.3-1.5 2.5V11"/><path d="M8.7 11h6"/><path d="M11.5 11v8.5"/>'),
+  palet: svg('<path d="M12 3a9 8.5 0 1 0 0 17c1.4 0 1.9-.8 1.9-1.6 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.6 1.6-1.6H16a4.5 4 0 0 0 4.5-4C20.5 6.4 16.7 3 12 3z"/><circle cx="8" cy="11" r="1.1" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15" r="1.1" fill="currentColor" stroke="none"/><circle cx="12.5" cy="7.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="9.5" r="1.1" fill="currentColor" stroke="none"/>')
 };

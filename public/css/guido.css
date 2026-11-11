@@ -2,12 +2,18 @@
    guido. tafelclip — stijl
    ============================================================ */
 :root {
-  --green: #174B00; --green-2: #235E08; --green-deep: #0F3300; --green-soft: #E6EEDC;
-  --yellow: #FFDE5A; --yellow-2: #F5CF35; --yellow-soft: #FFF3C2;
+  /* Thema: door de eigenaar instelbaar (tabblad Thema). Dezelfde waarden als voorheen, dus
+     niemand die niets instelt merkt een verschil. */
+  --kleur-primair: #174B00; --kleur-accent: #FFDE5A;
+  --lettertype-stack: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --logo-schaal: 1;
+
+  --green: var(--kleur-primair); --green-2: #235E08; --green-deep: #0F3300; --green-soft: #E6EEDC;
+  --yellow: var(--kleur-accent); --yellow-2: #F5CF35; --yellow-soft: #FFF3C2;
   --ground: #FBF7EA; --card: #FFFFFF; --ink: #16210E; --line: #E4DDC6; --soft: #F3EEDD;
   --muted: #5C6452; --warn: #9A3B2E; --warn-soft: #F8E3DE; --ok: #2F7A12;
   --hand: 'Gochi Hand', 'Comic Sans MS', cursive;
-  --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sans: var(--lettertype-stack);
   --r: 16px;
   --shadow: 0 1px 2px rgba(22, 33, 14, .06), 0 4px 14px rgba(22, 33, 14, .06);
 }
@@ -71,7 +77,7 @@ img { max-width: 100%; }
 .g-top-rij { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .woordmerk { font-family: var(--hand); font-size: 42px; line-height: 1; color: #fff; letter-spacing: .5px; margin: 0; }
 .woordmerk b { color: var(--yellow); font-weight: 400; }
-.g-logo { height: 58px; width: auto; max-width: 190px; object-fit: contain; display: block; }
+.g-logo { height: calc(58px * var(--logo-schaal)); width: auto; max-width: calc(190px * var(--logo-schaal)); object-fit: contain; display: block; }
 .personeel-strook { position: sticky; top: 0; z-index: 30; display: flex; justify-content: space-between; align-items: center; gap: 12px; max-width: 480px; margin: 0 auto; background: var(--yellow); color: var(--ink); padding: 8px 16px; font-size: 14px; }
 .personeel-strook a { color: var(--ink); font-weight: 700; }
 .a-nav .logo-nav { height: 46px; width: auto; margin: 0 10px 2px; align-self: flex-start; }

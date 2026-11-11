@@ -18,6 +18,7 @@ const TABS = [
   { id: 'meldingen', naam: 'Meldingen', ico: I.bel, rol: 'personeel', groep: 'Vandaag' },
   { id: 'cijfers', naam: 'Cijfers', ico: I.grafiek, rol: 'eigenaar', groep: 'Vandaag' },
   { id: 'klantscherm', naam: 'Knoppen & uren', ico: I.scherm, rol: 'eigenaar', groep: 'Wat de klant ziet' },
+  { id: 'thema', naam: 'Thema', ico: I.palet, rol: 'eigenaar', groep: 'Wat de klant ziet' },
   { id: 'mededelingen', naam: 'Mededelingen', ico: I.megafoon, rol: 'eigenaar', groep: 'Wat de klant ziet' },
   { id: 'buurt', naam: 'In de buurt', ico: I.kaart, rol: 'eigenaar', groep: 'Wat de klant ziet' },
   { id: 'personeel', naam: 'Personeel', ico: I.hand, rol: 'eigenaar', gedeeld: true, groep: 'Opzet' },
@@ -98,7 +99,7 @@ function ping() {
 function loginHtml() {
   const gedeeld = store && store.mode === 'gedeeld';
   const fout = ui.loginFout ? `<div class="melding-fout" role="alert">${esc(ui.loginFout)}</div>` : '';
-  const pinVeld = (id, label) => `<label class="lbl" for="${id}">${label}</label><input class="veld" id="${id}" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" minlength="4" required autocomplete="off">`;
+  const pinVeld = (id, label) => `<label class="lbl" for="${id}">${label}</label><input class="veld" id="${id}" type="password" maxlength="72" minlength="8" required autocomplete="off">`;
   if (ui.setup && ui.setup.nodig) {
     return `<div class="a-login"><form id="setup" autocomplete="off">
       <img class="logo-login" src="img/logo.png" alt="guido.">
@@ -107,7 +108,7 @@ function loginHtml() {
       ${ui.setup.codeIngesteld ? '' : '<div class="melding-fout">Stel eerst <strong>GUIDO_SETUP_CODE</strong> in bij Netlify (LEESMIJ, stap 2).</div>'}
       <label class="lbl" for="s-code">Opstartcode</label><input class="veld" id="s-code" type="password" required autocomplete="off">
       <label class="lbl" for="s-naam">Je naam</label><input class="veld" id="s-naam" type="text" required maxlength="40" autocomplete="off">
-      ${pinVeld('s-pin', 'Kies een pincode (4 tot 8 cijfers)')}
+      ${pinVeld('s-pin', 'Kies een wachtwoord (minstens 8 tekens, met letters en cijfers)')}
       ${fout}
       <button class="btn btn-groen btn-vol" type="submit">Account maken</button>
     </form></div>`;
@@ -116,10 +117,10 @@ function loginHtml() {
     <img class="logo-login" src="img/logo.png" alt="guido.">
     <p style="margin:0;text-align:center" class="muted">guido. team · meldingen en beheer</p>
     ${gedeeld ? `<label class="lbl" for="naam">Naam</label><input class="veld" id="naam" type="text" required maxlength="40" autocomplete="username" autocapitalize="words" value="${esc((personeel.ik() || {}).naam || '')}">` : ''}
-    ${pinVeld('pin', 'Pincode')}
+    ${pinVeld('pin', 'Wachtwoord')}
     ${fout}
     <button class="btn btn-groen btn-vol" type="submit">Aanmelden</button>
-    <p class="tiny muted" style="margin:0;text-align:center">${gedeeld ? 'Nog geen account? Vraag het aan de eigenaar.' : 'Demo zonder server: de pincode is <strong>1234</strong>.'}</p>
+    <p class="tiny muted" style="margin:0;text-align:center">${gedeeld ? 'Nog geen account? Vraag het aan de eigenaar.' : 'Demo zonder server: het wachtwoord is <strong>1234</strong>.'}</p>
   </form></div>`;
 }
 
@@ -303,6 +304,17 @@ function moduleBlok(path, titel, uitleg, lijf) {
   </section>`;
 }
 
+const VOLGORDE_LABELS = { acties: 'Oproepknop & acties', wifi: 'Wifi', mededelingen: 'Mededelingen', buurt: 'In de buurt' };
+function volgordeBlok() {
+  const lijst = draft.volgorde;
+  const items = lijst.map((k, i) => `<div class="lijst-item" style="padding:10px 14px">
+    <div class="li-kop" style="margin:0"><span class="titel">${esc(VOLGORDE_LABELS[k] || k)}</span>
+      ${knop('op', I.omhoog, 'Hoger', `data-path="volgorde" data-i="${i}" ${i === 0 ? 'disabled' : ''}`)}${knop('neer', I.omlaag, 'Lager', `data-path="volgorde" data-i="${i}" ${i === lijst.length - 1 ? 'disabled' : ''}`)}</div>
+  </div>`).join('');
+  return `<section class="blok"><h2>Volgorde op het klantscherm</h2><p class="uitleg">In welke volgorde de klant deze onderdelen ziet, onder de knoppen.</p>
+    <div class="lijst">${items}</div></section>`;
+}
+
 function klantschermTab() {
   const c = draft;
   const logo = c.cafe.logo ? `<img src="${esc(c.cafe.logo)}" alt="Logo">` : (c.cafe.naam || 'guido.') === 'guido.' ? '<img src="img/logo.png" alt="guido.">' : `<span class="woordmerk">${esc((c.cafe.naam || '').replace(/\.$/, ''))}<b>.</b></span>`;
@@ -365,7 +377,27 @@ function klantschermTab() {
   const wifi = moduleBlok('wifi', 'Wifi', 'Toont de naam en het wachtwoord van de gastenwifi, met een knop om te kopiëren.', `
     <div class="grid2">${tekstVeld('wifi.naam', 'Naam van het netwerk')}${tekstVeld('wifi.wachtwoord', 'Wachtwoord', { hulp: 'Iedereen die een clip aantikt, kan dit lezen. Gebruik enkel de gastenwifi.' })}</div>`);
 
-  return kop('Knoppen & uren', 'Kies wat klanten kunnen doen als ze de clip aantikken. Alles wordt meteen bewaard.') + algemeen + sociaal + uren + ober + afrekenen + verzoekjes + wifi;
+  return kop('Knoppen & uren', 'Kies wat klanten kunnen doen als ze de clip aantikken. Alles wordt meteen bewaard.') + volgordeBlok() + algemeen + sociaal + uren + ober + afrekenen + verzoekjes + wifi;
+}
+
+/* ---------------- thema ---------------- */
+function themaTab() {
+  const t = draft.theme;
+  const kleurVeld = (path, label) => `<div class="veldrij"><label for="f-${path}">${esc(label)}</label><input type="color" id="f-${path}" data-bind="${path}" value="${esc(getPath(draft, path))}" style="min-height:42px;padding:4px;max-width:120px"></div>`;
+  return kop('Thema', 'Kleuren, lettertype en logogrootte op het klantscherm. Niets verandert vanzelf.') + `
+    <section class="blok"><h2>Kleuren</h2>
+      <div class="grid2">
+        ${kleurVeld('theme.kleurPrimair', 'Hoofdkleur (balk, knoppen)')}
+        ${kleurVeld('theme.kleurAccent', 'Accentkleur (oproepknop, tafelpil)')}
+      </div>
+      <div class="knoppen-rij" style="margin-top:12px"><button class="btn btn-licht btn-klein" type="button" data-a="thema-reset">Terug naar standaardkleuren</button></div>
+    </section>
+    <section class="blok"><h2>Lettertype</h2>
+      ${selectVeld('theme.lettertype', 'Lettertype op het klantscherm', [['inter', 'Inter (standaard)'], ['gochi', 'Gochi Hand (speels)'], ['systeem', 'Systeemlettertype']])}
+    </section>
+    <section class="blok"><h2>Logo</h2>
+      <div style="max-width:220px">${tekstVeld('theme.logoGrootte', 'Logogrootte (%)', { type: 'number', num: true, extra: 'min="50" max="200" step="5"', hulp: `${esc(String(t.logoGrootte))}% van de standaardgrootte.` })}</div>
+    </section>`;
 }
 
 /* ---------------- mededelingen ---------------- */
@@ -464,8 +496,12 @@ function instellingenTab() {
   </section>`;
 
   return kop('Instellingen') + tafelsBlok() + statusBlok + sunBlok + uitBlok + `
-    ${!online ? `<section class="blok"><h2>Pincode beheer</h2><p class="uitleg">4 tot 8 cijfers.</p>
-      <form id="pin-form" class="knoppen-rij" autocomplete="off"><label class="sr" for="nieuwe-pin">Nieuwe pincode</label><input type="password" id="nieuwe-pin" inputmode="numeric" pattern="[0-9]*" maxlength="8" style="max-width:200px" placeholder="Nieuwe pincode"><button class="btn btn-groen btn-klein" type="submit">Wijzigen</button></form></section>` : ''}
+    ${!online ? `<section class="blok"><h2>Wachtwoord beheren</h2><p class="uitleg">Minstens 8 tekens, met letters en cijfers.</p>
+      <form id="pin-form" class="knoppen-rij" autocomplete="off">
+        <label class="sr" for="huidige-pin">Huidig wachtwoord</label><input type="password" id="huidige-pin" minlength="8" maxlength="72" style="max-width:200px" placeholder="Huidig wachtwoord">
+        <label class="sr" for="nieuwe-pin">Nieuw wachtwoord</label><input type="password" id="nieuwe-pin" minlength="8" maxlength="72" style="max-width:200px" placeholder="Nieuw wachtwoord">
+        <button class="btn btn-groen btn-klein" type="submit">Wijzigen</button>
+      </form></section>` : ''}
     <section class="blok"><h2>Reservekopie</h2><p class="uitleg">Download je instellingen of zet ze over naar een ander café of toestel.</p>
       <div class="knoppen-rij">
         <button class="btn btn-licht btn-klein" data-a="export">Download instellingen</button>
@@ -587,7 +623,7 @@ function personeelTab() {
     <td>${g.aan ? '<span class="badge ok">Actief</span>' : '<span class="badge">Uit</span>'}</td>
     <td class="small muted">${g.laatst ? ago(g.laatst) : '—'}</td>
     <td><div class="knoppen-rij">
-      <button class="btn btn-licht btn-klein" data-a="g-pin" data-id="${g.id}">Nieuwe pincode</button>
+      <button class="btn btn-licht btn-klein" data-a="g-pin" data-id="${g.id}">Nieuw wachtwoord</button>
       <button class="btn btn-licht btn-klein" data-a="g-rol" data-id="${g.id}" data-v="${g.rol === 'eigenaar' ? 'personeel' : 'eigenaar'}">${g.rol === 'eigenaar' ? 'Maak personeel' : 'Maak eigenaar'}</button>
       <button class="btn btn-licht btn-klein" data-a="g-aan" data-id="${g.id}" data-v="${g.aan ? '0' : '1'}">${g.aan ? 'Uitzetten' : 'Aanzetten'}</button>
       <button class="ikoon-knop weg" data-a="g-weg" data-id="${g.id}" aria-label="Verwijderen" title="Verwijderen">${I.weg}</button>
@@ -597,11 +633,12 @@ function personeelTab() {
     <section class="blok"><h2>Iemand toevoegen</h2>
       <form id="nieuw-personeel" class="grid3" autocomplete="off" style="align-items:end">
         <div class="veldrij"><label for="np-naam">Naam</label><input type="text" id="np-naam" maxlength="40" required></div>
-        <div class="veldrij"><label for="np-pin">Pincode (4–8 cijfers)</label><input type="password" id="np-pin" inputmode="numeric" pattern="[0-9]*" minlength="4" maxlength="8" required></div>
+        <div class="veldrij"><label for="np-pin">Wachtwoord (min. 8 tekens, letters en cijfers)</label><input type="password" id="np-pin" minlength="8" maxlength="72" required></div>
         <div class="veldrij"><label for="np-rol">Rol</label><select id="np-rol"><option value="personeel">Personeel</option><option value="eigenaar">Eigenaar</option></select></div>
+        <div class="veldrij"><label for="np-huidig">Jouw huidige wachtwoord (ter bevestiging)</label><input type="password" id="np-huidig" minlength="8" maxlength="72" required></div>
         <div><button class="btn btn-groen btn-klein" type="submit">Toevoegen</button></div>
       </form>
-      <p class="small muted" style="margin:10px 0 0">Geef de pincode mondeling door. Op een iPhone: open <code>${esc(location.origin)}/beheer.html</code>, meld je aan, zet de app op het beginscherm en zet meldingen aan.</p>
+      <p class="small muted" style="margin:10px 0 0">Geef het wachtwoord mondeling door. Op een iPhone: open <code>${esc(location.origin)}/beheer.html</code>, meld je aan, zet de app op het beginscherm en zet meldingen aan.</p>
     </section>`;
 }
 
@@ -645,7 +682,15 @@ async function extraKlik(a, el) {
     }
     case 'onderhoud-nu': { const r = await opdracht(a, 'onderhoud-nu', {}, 'status'); if (r) ui.uitvoer.status = r.length ? r.join('\n') : 'Klaar, niets te doen.'; renderMain(); return true; }
     case 'push-test': { const r = await opdracht(a, 'push-test', {}, 'status'); if (r) ui.uitvoer.status = `Testmelding verstuurd naar ${r.verstuurd} toestel(len).`; renderMain(); return true; }
-    case 'g-pin': { const pin = prompt('Nieuwe pincode (4 tot 8 cijfers):'); if (pin) { const r = await opdracht(a, 'gebruiker-wijzig', { id: el.dataset.id, pin: pin.trim() }); if (r) toast('Pincode gewijzigd. Die persoon moet zich opnieuw aanmelden.'); } return true; }
+    case 'g-pin': {
+      const pin = prompt('Nieuw wachtwoord (minstens 8 tekens, met letters en cijfers):');
+      if (!pin) return true;
+      const huidig = prompt('Bevestig met je eigen huidige wachtwoord:');
+      if (!huidig) return true;
+      const r = await opdracht(a, 'gebruiker-wijzig', { id: el.dataset.id, pin: pin.trim(), huidig: huidig.trim() });
+      if (r) toast('Wachtwoord gewijzigd. Die persoon moet zich opnieuw aanmelden.');
+      return true;
+    }
     case 'g-rol': { const r = await opdracht(a, 'gebruiker-wijzig', { id: el.dataset.id, rol: el.dataset.v }); if (r) toast('Rol gewijzigd.'); return true; }
     case 'g-aan': { const r = await opdracht(a, 'gebruiker-wijzig', { id: el.dataset.id, aan: el.dataset.v === '1' }); if (r) toast('Bijgewerkt.'); return true; }
     case 'g-weg': if (confirm('Deze persoon verwijderen?')) { const r = await opdracht(a, 'gebruiker-weg', { id: el.dataset.id }); if (r) toast('Verwijderd.'); } return true;
@@ -659,6 +704,7 @@ async function extraKlik(a, el) {
 function mainHtml() {
   switch (ui.tab) {
     case 'klantscherm': return klantschermTab();
+    case 'thema': return themaTab();
     case 'mededelingen': return mededelingenTab();
     case 'buurt': return buurtTab();
     case 'instellingen': return instellingenTab();
@@ -917,6 +963,9 @@ async function onClick(e) {
       getPath(draft, path).splice(i, 1); wijzig(); renderMain(); break;
     }
     case 'logo-weg': draft.cafe.logo = ''; wijzig(); renderMain(); break;
+    case 'thema-reset':
+      draft.theme = { kleurPrimair: '#174B00', kleurAccent: '#FFDE5A', lettertype: 'inter', logoGrootte: 100 };
+      wijzig(); renderMain(); break;
     case 'mededeling-afbeelding-weg': draft.mededelingen.items[i].afbeelding = ''; wijzig(); renderMain(); break;
     case 'csv': {
       const stats = V.live.stats || {};
@@ -1033,17 +1082,19 @@ async function onSubmit(e) {
     } catch (err) { ui.loginFout = err.message; renderAll(); }
   }
   if (e.target.id === 'nieuw-personeel') {
-    const r = await opdracht('np', 'gebruiker-plus', { naam: waarde('np-naam').trim(), pin: waarde('np-pin').trim(), rol: waarde('np-rol') });
-    if (r) toast('Toegevoegd.');
+    const r = await opdracht('np', 'gebruiker-plus', { naam: waarde('np-naam').trim(), pin: waarde('np-pin').trim(), rol: waarde('np-rol'), huidig: waarde('np-huidig').trim() });
+    if (r) { toast('Toegevoegd.'); e.target.reset(); }
   }
   if (e.target.id === 'pin-form') {
     const inp = document.getElementById('nieuwe-pin');
+    const huidigInp = document.getElementById('huidige-pin');
     const nieuw = inp.value.trim();
+    const huidig = huidigInp.value.trim();
     try {
-      await store.dispatch({ type: 'pin', nieuw });
+      await store.dispatch({ type: 'pin', nieuw, huidig });
       savedPin.set(nieuw);
-      inp.value = '';
-      toast('Pincode gewijzigd.');
+      inp.value = ''; huidigInp.value = '';
+      toast('Wachtwoord gewijzigd.');
     } catch (err) { toast(err.message, true); }
   }
 }

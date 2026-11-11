@@ -133,7 +133,7 @@ export async function routeApi(storage, env, req) {
       const code = env.GUIDO_SETUP_CODE;
       if (!code) return fout('Stel eerst GUIDO_SETUP_CODE in bij Cloudflare (zie LEESMIJ).', 400, 'setup');
       if (!b.code || b.code.length !== code.length || !crypto.timingSafeEqual(Buffer.from(b.code), Buffer.from(code))) return fout('De opstartcode klopt niet.', 403, 'setup');
-      if (!/^\d{4,8}$/.test(String(b.pin || ''))) return fout('Een pincode heeft 4 tot 8 cijfers.');
+      if (!/^(?=.*[a-zA-Z])(?=.*[0-9]).{8,72}$/.test(String(b.pin || ''))) return fout('Een wachtwoord heeft minstens 8 tekens, met zowel letters als cijfers.');
       const naam = String(b.naam || '').trim().slice(0, 40);
       if (!naam) return fout('Vul je naam in.');
       const { result } = await wijzig(storage, 'gebruikers', GEBRUIKERS_LEEG, (d) => {
@@ -235,7 +235,8 @@ export async function routeApi(storage, env, req) {
               const naam = String(b.naam || '').trim().slice(0, 40);
               if (!naam) err('Vul een naam in.');
               if (d.lijst.some((x) => naamSleutel(x.naam) === naamSleutel(naam))) err('Die naam bestaat al.');
-              if (!/^\d{4,8}$/.test(String(b.pin || ''))) err('Een pincode heeft 4 tot 8 cijfers.');
+              if (!pinKlopt(b.huidig, w.gebruiker)) err('Je huidige wachtwoord klopt niet.');
+              if (!/^(?=.*[a-zA-Z])(?=.*[0-9]).{8,72}$/.test(String(b.pin || ''))) err('Een wachtwoord heeft minstens 8 tekens, met zowel letters als cijfers.');
               d.lijst.push({ id: uid(), naam, rol: b.rol === 'eigenaar' ? 'eigenaar' : 'personeel', ...hashPin(b.pin), versie: 0, aan: true });
               return;
             }
@@ -244,7 +245,11 @@ export async function routeApi(storage, env, req) {
             const eigenaars = d.lijst.filter((y) => y.rol === 'eigenaar' && y.aan !== false);
             const laatsteEigenaar = x.rol === 'eigenaar' && eigenaars.length === 1;
             if (b.type === 'gebruiker-weg') { if (laatsteEigenaar) err('Je kan de laatste eigenaar niet verwijderen.'); d.lijst = d.lijst.filter((y) => y.id !== b.id); return; }
-            if (b.pin !== undefined) { if (!/^\d{4,8}$/.test(String(b.pin))) err('Een pincode heeft 4 tot 8 cijfers.'); Object.assign(x, hashPin(b.pin)); x.versie = (x.versie || 0) + 1; }
+            if (b.pin !== undefined) {
+              if (!pinKlopt(b.huidig, w.gebruiker)) err('Je huidige wachtwoord klopt niet.');
+              if (!/^(?=.*[a-zA-Z])(?=.*[0-9]).{8,72}$/.test(String(b.pin))) err('Een wachtwoord heeft minstens 8 tekens, met zowel letters als cijfers.');
+              Object.assign(x, hashPin(b.pin)); x.versie = (x.versie || 0) + 1;
+            }
             if (b.rol) { if (laatsteEigenaar && b.rol !== 'eigenaar') err('Er moet minstens één eigenaar blijven.'); x.rol = b.rol === 'eigenaar' ? 'eigenaar' : 'personeel'; x.versie = (x.versie || 0) + 1; }
             if (b.aan !== undefined) { if (laatsteEigenaar && !b.aan) err('Er moet minstens één eigenaar blijven.'); x.aan = !!b.aan; x.versie = (x.versie || 0) + 1; }
           });

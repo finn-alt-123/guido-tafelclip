@@ -164,6 +164,33 @@ function wifiHtml(c) {
     ${w.wachtwoord ? `<button class="btn btn-licht btn-klein" data-a="kopieer-wifi">${I.kopie} ${L('Kopieer', 'Copy')}</button>` : ''}</section>`;
 }
 
+const VOLGORDE_KEYS = ['acties', 'wifi', 'mededelingen', 'buurt'];
+function volgordeHtml(c, secties) {
+  const volgorde = Array.isArray(c.volgorde) && c.volgorde.length === VOLGORDE_KEYS.length && VOLGORDE_KEYS.every((k) => c.volgorde.includes(k))
+    ? c.volgorde : VOLGORDE_KEYS;
+  return volgorde.map((k) => secties[k] || '').join('');
+}
+
+/* ---------------- thema: eigen kleuren, lettertype en logogrootte ---------------- */
+const LETTERTYPE_STACKS = {
+  inter: "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif",
+  gochi: "'Gochi Hand', 'Comic Sans MS', cursive",
+  systeem: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif'
+};
+let laatsteThema = '';
+function themaToepassen(theme) {
+  if (!theme) return;
+  const sleutel = JSON.stringify(theme);
+  if (sleutel === laatsteThema) return;
+  laatsteThema = sleutel;
+  const r = document.documentElement.style;
+  if (/^#[0-9a-fA-F]{6}$/.test(theme.kleurPrimair)) r.setProperty('--kleur-primair', theme.kleurPrimair);
+  if (/^#[0-9a-fA-F]{6}$/.test(theme.kleurAccent)) r.setProperty('--kleur-accent', theme.kleurAccent);
+  r.setProperty('--lettertype-stack', LETTERTYPE_STACKS[theme.lettertype] || LETTERTYPE_STACKS.inter);
+  const schaal = Number(theme.logoGrootte);
+  r.setProperty('--logo-schaal', String((Number.isFinite(schaal) && schaal >= 50 && schaal <= 200 ? schaal : 100) / 100));
+}
+
 function pageHtml() {
   const c = V.config;
   const t = tafel();
@@ -193,10 +220,9 @@ function pageHtml() {
       ${(() => { const w = kiesTaal(c.cafe.welkom, c.cafe.welkomEn); return w ? `<p class="g-welkom">${esc(w)}</p>` : ''; })()}
     </header>
     <main class="g-main">
-      ${actiesHtml(c)}
-      ${wifiHtml(c)}
-      ${med ? `<section class="sectie" aria-labelledby="h-med"><h2 id="h-med">${L('Bij', 'At')} ${esc(c.cafe.naam || L('ons', 'ours'))}</h2><div class="kaarten">${med}</div></section>` : ''}
-      ${buurt ? `<section class="sectie" aria-labelledby="h-buurt"><h2 id="h-buurt">${L('In de buurt', 'Nearby')}</h2><div class="kaarten">${buurt}</div></section>` : ''}
+      ${volgordeHtml(c, { acties: actiesHtml(c), wifi: wifiHtml(c),
+        mededelingen: med ? `<section class="sectie" aria-labelledby="h-med"><h2 id="h-med">${L('Bij', 'At')} ${esc(c.cafe.naam || L('ons', 'ours'))}</h2><div class="kaarten">${med}</div></section>` : '',
+        buurt: buurt ? `<section class="sectie" aria-labelledby="h-buurt"><h2 id="h-buurt">${L('In de buurt', 'Nearby')}</h2><div class="kaarten">${buurt}</div></section>` : '' })}
     </main>
     <footer class="g-voet">
       ${sociaalHtml(c)}
@@ -266,6 +292,7 @@ function renderSheet() {
 
 function render() {
   if (!V) return;
+  themaToepassen(V.config.theme);
   if (!tafel()) { app.innerHTML = onbekendeTafelHtml(); closeSheet(); return; }
   document.title = tafel().naam + ' · ' + cafeNaam();
   if (!V.open && ui.sheet) closeSheet();

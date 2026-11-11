@@ -27,6 +27,8 @@ export function defaultConfig(now = Date.now()) {
   return {
     rev: 1,
     adminPin: '1234',
+    volgorde: ['acties', 'wifi', 'mededelingen', 'buurt'],
+    theme: { kleurPrimair: '#174B00', kleurAccent: '#FFDE5A', lettertype: 'inter', logoGrootte: 100 },
     cafe: {
       naam: 'guido.',
       welkom: 'Fijn dat je er bent! Bestellen doe je gewoon bij ons, aan tafel.',
@@ -96,8 +98,13 @@ export function migreer(state) {
   if (c.rekening && !c.afrekenen) c.afrekenen = { aan: c.rekening.aan !== false, wijze: true };
   for (const k of ['rekening', 'kassa', 'prijslijst']) delete c[k];
   c.tafels.forEach((t) => { delete t.lsTafel; });
-  vulAan(c, { beveiliging: basis.beveiliging, uren: basis.uren, ober: basis.ober, afrekenen: basis.afrekenen, wifi: basis.wifi, buurt: basis.buurt, verzoekjes: { aan: true, items: [] }, mededelingen: { aan: true, items: [] } });
+  vulAan(c, { beveiliging: basis.beveiliging, uren: basis.uren, ober: basis.ober, afrekenen: basis.afrekenen, wifi: basis.wifi, buurt: basis.buurt, verzoekjes: { aan: true, items: [] }, mededelingen: { aan: true, items: [] }, theme: basis.theme });
   if (!Array.isArray(c.uren.dagen) || c.uren.dagen.length !== 7) c.uren.dagen = basis.uren.dagen;
+  // volgorde: moet precies de 4 gekende onderdelen bevatten, elk één keer
+  if (!Array.isArray(c.volgorde) || c.volgorde.length !== basis.volgorde.length
+    || new Set(c.volgorde).size !== basis.volgorde.length || !c.volgorde.every((k) => basis.volgorde.includes(k))) {
+    c.volgorde = basis.volgorde.slice();
+  }
   // oude teksten: eigen vertaling en afbeelding/GIF nog niet voorzien
   vulAan(c.cafe, basis.cafe);
   (c.mededelingen.items || []).forEach((m) => vulAan(m, { titelEn: '', tekstEn: '', afbeelding: '' }));
@@ -445,13 +452,25 @@ export function apply(prev, action, now = Date.now()) {
         if (!t.id || ids.has(t.id)) fout('Elke tafel heeft een unieke code nodig.', 'tafel');
         ids.add(t.id);
       }
+      const VOLGORDE_KEYS = ['acties', 'wifi', 'mededelingen', 'buurt'];
+      if (!Array.isArray(c.volgorde) || c.volgorde.length !== VOLGORDE_KEYS.length
+        || new Set(c.volgorde).size !== VOLGORDE_KEYS.length || !c.volgorde.every((k) => VOLGORDE_KEYS.includes(k))) {
+        fout('Ongeldige volgorde.', 'config');
+      }
+      if (!c.theme || !/^#[0-9a-fA-F]{6}$/.test(c.theme.kleurPrimair) || !/^#[0-9a-fA-F]{6}$/.test(c.theme.kleurAccent)
+        || !['inter', 'gochi', 'systeem'].includes(c.theme.lettertype)
+        || typeof c.theme.logoGrootte !== 'number' || c.theme.logoGrootte < 50 || c.theme.logoGrootte > 200) {
+        fout('Ongeldige thema-instelling.', 'config');
+      }
       state.config = { ...c, adminPin: state.config.adminPin, rev: state.config.rev };
       raaktConfig = true; raaktLive = false;
       break;
     }
     case 'pin': {
+      const huidig = String(a.huidig || '');
+      if (huidig !== state.config.adminPin) fout('Je huidige wachtwoord klopt niet.', 'huidig');
       const p = String(a.nieuw || '').trim();
-      if (!/^\d{4,8}$/.test(p)) fout('Een pincode heeft 4 tot 8 cijfers.', 'pin');
+      if (!/^(?=.*[a-zA-Z])(?=.*[0-9]).{8,72}$/.test(p)) fout('Een wachtwoord heeft minstens 8 tekens, met zowel letters als cijfers.', 'pin');
       state.config.adminPin = p;
       raaktConfig = true; raaktLive = false;
       break;
