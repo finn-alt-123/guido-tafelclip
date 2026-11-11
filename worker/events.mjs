@@ -3,7 +3,7 @@
    - UiTdatabank (publiq) Search API — de officiële agenda van Vlaanderen
    - Agenda-links (.ics) van bevriende zaken, bv. Google Agenda
    ============================================================ */
-const UIT = () => process.env.UIT_API_BASE || 'https://search.uitdatabank.be';
+const UIT = (env) => (env && env.UIT_API_BASE) || 'https://search.uitdatabank.be';
 
 const tz = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Brussels', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 export function brussel(d) {
@@ -17,12 +17,12 @@ const kort = (t, n = 200) => {
 const nl = (v) => (v && typeof v === 'object' ? v.nl || v.en || Object.values(v)[0] : v) || '';
 
 /* ---------- UiTdatabank ---------- */
-export async function uitEvents({ sleutel, postcode = '9000', soorten = '', dagen = 7, nu = Date.now() }) {
+export async function uitEvents({ sleutel, postcode = '9000', soorten = '', dagen = 7, nu = Date.now(), env }) {
   const van = new Date(nu).toISOString();
   const tot = new Date(nu + dagen * 864e5).toISOString();
   const q = new URLSearchParams({ embed: 'true', postalCode: postcode, dateFrom: van, dateTo: tot, limit: '50' });
-  let r = await fetch(UIT() + '/events?' + q, { headers: { 'x-api-key': sleutel, accept: 'application/json' }, signal: AbortSignal.timeout(15000) });
-  if (r.status === 401 || r.status === 403) r = await fetch(UIT() + '/events?' + q, { headers: { 'x-client-id': sleutel, accept: 'application/json' }, signal: AbortSignal.timeout(15000) });
+  let r = await fetch(UIT(env) + '/events?' + q, { headers: { 'x-api-key': sleutel, accept: 'application/json' }, signal: AbortSignal.timeout(15000) });
+  if (r.status === 401 || r.status === 403) r = await fetch(UIT(env) + '/events?' + q, { headers: { 'x-client-id': sleutel, accept: 'application/json' }, signal: AbortSignal.timeout(15000) });
   if (!r.ok) throw new Error('UiTdatabank antwoordde ' + r.status + (r.status === 401 || r.status === 403 ? ' (sleutel klopt niet?)' : ''));
   const j = await r.json();
   const filters = String(soorten || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);

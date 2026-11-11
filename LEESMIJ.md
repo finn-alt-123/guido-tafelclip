@@ -37,22 +37,25 @@ Bestaande instellingen, logins, tafels en gekoppelde chips blijven werken na de 
 
 ---
 
+## Dit draait op Cloudflare Workers (niet Netlify)
+
+De site staat op **Cloudflare**, niet op Netlify: Netlify Blobs en Netlify Functions bestaan daar niet, dus de opslag en de server zijn herschreven voor Cloudflare (een *Durable Object* voor veilige opslag, pushmeldingen zonder externe bibliotheek). Voor jou als gebruiker verandert er niets aan hoe de app werkt — enkel waar en hoe je ze bijwerkt.
+
 ## Bijwerken (je site staat al online)
 
-1. Open je repository op **github.com**.
-2. Verwijder in de map `guido-tafelclip` deze twee bestanden, als ze er nog staan: `netlify/lib/lightspeed.mjs` en `netlify/lib/mollie.mjs`.
-3. Klik **Add file → Upload files** en sleep de **inhoud** van de nieuwe map erin, in dezelfde map als de vorige keer. Let op de nieuwe map `fonts`. Klik **Commit changes**.
-4. Netlify zet alles binnen een minuut online. Controle: `https://<jouw-site>/api/state?ping=1` toont `{"ok":true,"versie":"3.0"}`.
-5. Op de iPad: sluit de app *guido.* helemaal af en open ze opnieuw.
+1. Werk gewoon je bestanden bij in **github.com** (map `guido-tafelclip`) zoals je gewend bent: bestanden verwijderen/vervangen via het potloodicoontje, of **Add file → Upload files** voor nieuwe bestanden. Commit de wijziging.
+2. Cloudflare bouwt automatisch opnieuw zodra er iets op de `main`-branch verandert. Volg het mee bij **dash.cloudflare.com → Workers & Pages → guido-tafelclip → Deployments**.
+3. Controle: `https://<jouw-site>/api/state?ping=1` toont `{"ok":true,"versie":"3.0"}`.
+4. Op de iPad: sluit de app *guido.* helemaal af en open ze opnieuw.
 
 ## Nieuw opzetten (nog niets online)
 
-1. Maak een gratis account op **github.com** → **New repository** → naam `guido-tafelclip` → **Private** → *Create*.
-2. Klik **uploading an existing file** en sleep de **inhoud** van deze map erin (bestanden én de mappen `css`, `fonts`, `img`, `js`, `netlify`). Klik **Commit changes**.
-3. Ga naar **app.netlify.com** → *Add new project* → **Import an existing project** → **GitHub** → kies de repository → **Deploy**. Netlify leest alles uit `netlify.toml`.
-4. **Zet de beveiliging van Netlify uit**: *Project configuration → Access & security → Visitor access* → publiek. Anders ziet iedereen een wit scherm.
-5. *Project configuration → Environment variables* → voeg `GUIDO_SETUP_CODE` toe met een lange geheime zin. Daarna **Deploys → Deploy project**.
-6. Open `https://<jouw-site>/beheer.html`, geef de opstartcode, je naam en een pincode. Je bent nu **eigenaar**.
+1. Maak een gratis account op **github.com** → **New repository** → naam `guido-tafelclip` → **Private** → *Create*. Upload alle bestanden en mappen van deze map (`public`, `worker`, `wrangler.jsonc`, `package.json`, …).
+2. Maak een gratis account op **dash.cloudflare.com** → **Workers & Pages** → **Create** → **Workers** → **Connect to Git** → kies de repository `guido-tafelclip` → **Save and Deploy**. Cloudflare leest de configuratie uit `wrangler.jsonc` (statische bestanden, de Durable Object voor opslag, en het elk-uur-onderhoud).
+3. Daarna: **Settings → Variables and Secrets** → **Add** → naam `GUIDO_SETUP_CODE`, type **Secret**, waarde een lange geheime zin → **Deploy** (of **Save and deploy**).
+4. Open `https://<jouw-site>/beheer.html`, geef de opstartcode, je naam en een pincode. Je bent nu **eigenaar**.
+
+> De gratis `workers.dev`-link werkt meteen. Wil je een eigen domeinnaam (bv. `tafel.cafeguido.be`)? **Settings → Domains & Routes → Add**.
 
 ---
 
@@ -128,7 +131,7 @@ Op een breed scherm zie je rechts altijd een live voorbeeld van het klantscherm.
 
 ## Kosten
 
-Alles draait op de gratis plannen van GitHub en Netlify. Het klantscherm vraagt de server enkel vlug om nieuws zolang er een oproep loopt (elke 4 tellen), anders één keer per minuut. De iPad kijkt elke 12 tellen als meldingen aan staan en ze zichtbaar is, en niet als de kassa op de voorgrond staat. Hou in de eerste weken het verbruik in het oog bij **Netlify → Usage**.
+Alles draait op de gratis plannen van GitHub en Cloudflare (100.000 verzoeken per dag, ruim genoeg voor één café). Het klantscherm vraagt de server enkel vlug om nieuws zolang er een oproep loopt (elke 4 tellen), anders één keer per minuut. De iPad kijkt elke 12 tellen als meldingen aan staan en ze zichtbaar is, en niet als de kassa op de voorgrond staat. Hou in de eerste weken het verbruik in het oog bij **dash.cloudflare.com → Workers & Pages → guido-tafelclip → Metrics**.
 
 ## Bewaking (optioneel)
 
@@ -146,11 +149,13 @@ Er worden geen namen of accounts van klanten bewaard. Meldingen verdwijnen na 24
 
 | Bestand | Wat |
 |---|---|
-| `index.html`, `js/gast.js` | Klantscherm (wat de chip opent) |
-| `beheer.html`, `js/beheer.js` | Meldingen voor het personeel en beheer voor de eigenaar |
-| `js/core.js` | Gedeelde regels: oproepen, limieten, openingsuren, rechten, cijfers |
-| `js/store.js` | Verbinding met de server (of lokale demo) |
-| `sw.js`, `manifest.webmanifest`, `img/`, `fonts/` | App op het beginscherm, pushmeldingen, logo, lettertypes |
-| `netlify/functions/api.mjs` | Server: logins, chips, meldingen |
-| `netlify/functions/onderhoud.mjs` | Elk uur: events ophalen, teken van leven |
-| `netlify/lib/` | Opslag, logins, pushmeldingen, chipcontrole, events |
+| `public/index.html`, `public/js/gast.js` | Klantscherm (wat de chip opent) |
+| `public/beheer.html`, `public/js/beheer.js` | Meldingen voor het personeel en beheer voor de eigenaar |
+| `public/js/core.js` | Gedeelde regels: oproepen, limieten, openingsuren, rechten, cijfers |
+| `public/js/store.js` | Verbinding met de server (of lokale demo) |
+| `public/sw.js`, `public/manifest.webmanifest`, `public/img/`, `public/fonts/` | App op het beginscherm, pushmeldingen, logo, lettertypes |
+| `wrangler.jsonc` | Cloudflare-configuratie: welke map publiek is, de opslag, het elk-uur-onderhoud |
+| `worker/index.mjs` | Ingang van de server: stuurt `/api/…` door, start het elk-uur-onderhoud |
+| `worker/store.mjs` | De Durable Object: bewaart alle gegevens veilig, ook bij gelijktijdige verzoeken |
+| `worker/routes.mjs` | Server: logins, chips, meldingen (de eigenlijke `/api/…`-routes) |
+| `worker/kern.mjs`, `worker/auth.mjs`, `worker/sun.mjs`, `worker/events.mjs`, `worker/push.mjs`, `worker/db.mjs` | Opslag, logins, pushmeldingen, chipcontrole, events |

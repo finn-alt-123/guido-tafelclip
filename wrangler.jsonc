@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "guido-tafelclip",
+  "main": "worker/index.mjs",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "assets": {
+    "directory": "./public"
+  },
+
+  "durable_objects": {
+    "bindings": [
+      { "name": "GUIDO_STORE", "class_name": "GuidoStore" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["GuidoStore"] }
+  ],
+
+  "triggers": {
+    "crons": ["7 * * * *"]
+  }
+}
