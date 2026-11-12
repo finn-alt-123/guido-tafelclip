@@ -304,14 +304,14 @@ function moduleBlok(path, titel, uitleg, lijf) {
   </section>`;
 }
 
-const VOLGORDE_LABELS = { acties: 'Oproepknop & acties', wifi: 'Wifi', mededelingen: 'Mededelingen', buurt: 'In de buurt' };
+const VOLGORDE_LABELS = { acties: 'Oproepknop & acties', wifi: 'Wifi', mededelingen: 'Mededelingen', buurt: 'In de buurt', sociaal: 'Google Reviews & sociale knoppen' };
 function volgordeBlok() {
   const lijst = draft.volgorde;
   const items = lijst.map((k, i) => `<div class="lijst-item" style="padding:10px 14px">
     <div class="li-kop" style="margin:0"><span class="titel">${esc(VOLGORDE_LABELS[k] || k)}</span>
       ${knop('op', I.omhoog, 'Hoger', `data-path="volgorde" data-i="${i}" ${i === 0 ? 'disabled' : ''}`)}${knop('neer', I.omlaag, 'Lager', `data-path="volgorde" data-i="${i}" ${i === lijst.length - 1 ? 'disabled' : ''}`)}</div>
   </div>`).join('');
-  return `<section class="blok"><h2>Volgorde op het klantscherm</h2><p class="uitleg">In welke volgorde de klant deze onderdelen ziet, onder de knoppen.</p>
+  return `<section class="blok"><h2>Volgorde op het klantscherm</h2><p class="uitleg">In welke volgorde de klant deze onderdelen ziet, onder de banner. Zet bijvoorbeeld de Google Reviews-knop bovenaan als die voor jou het belangrijkst is.</p>
     <div class="lijst">${items}</div></section>`;
 }
 
@@ -394,6 +394,9 @@ function themaTab() {
     </section>
     <section class="blok"><h2>Lettertype</h2>
       ${selectVeld('theme.lettertype', 'Lettertype op het klantscherm', [['inter', 'Inter (standaard)'], ['gochi', 'Gochi Hand (speels)'], ['systeem', 'Systeemlettertype']])}
+    </section>
+    <section class="blok"><h2>Groene banner bovenaan</h2>
+      ${selectVeld('theme.banner', 'Grootte van de banner', [['normaal', 'Normaal'], ['compact', 'Compact (kleiner logo en tekst)'], ['minimaal', 'Minimaal (zonder welkomsttekst)']])}
     </section>
     <section class="blok"><h2>Logo</h2>
       <div style="max-width:220px">${tekstVeld('theme.logoGrootte', 'Logogrootte (%)', { type: 'number', num: true, extra: 'min="50" max="200" step="5"', hulp: `${esc(String(t.logoGrootte))}% van de standaardgrootte.` })}</div>
@@ -964,7 +967,7 @@ async function onClick(e) {
     }
     case 'logo-weg': draft.cafe.logo = ''; wijzig(); renderMain(); break;
     case 'thema-reset':
-      draft.theme = { kleurPrimair: '#174B00', kleurAccent: '#FFDE5A', lettertype: 'inter', logoGrootte: 100 };
+      draft.theme = { kleurPrimair: '#174B00', kleurAccent: '#FFDE5A', lettertype: 'inter', logoGrootte: 100, banner: 'normaal' };
       wijzig(); renderMain(); break;
     case 'mededeling-afbeelding-weg': draft.mededelingen.items[i].afbeelding = ''; wijzig(); renderMain(); break;
     case 'csv': {

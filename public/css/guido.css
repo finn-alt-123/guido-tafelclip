@@ -73,7 +73,7 @@ img { max-width: 100%; }
    KLANTSCHERM
    ============================================================ */
 .g-app { max-width: 480px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; background: var(--ground); }
-.g-top { background: var(--green); color: #fff; padding: calc(18px + env(safe-area-inset-top)) 20px 44px; border-radius: 0 0 28px 28px; }
+.g-top { background: var(--green); color: #fff; padding: calc(18px + env(safe-area-inset-top)) 20px 26px; border-radius: 0 0 28px 28px; }
 .g-top-rij { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .woordmerk { font-family: var(--hand); font-size: 42px; line-height: 1; color: #fff; letter-spacing: .5px; margin: 0; }
 .woordmerk b { color: var(--yellow); font-weight: 400; }
@@ -106,7 +106,17 @@ img { max-width: 100%; }
 .taal button::after { content: ''; position: absolute; inset: -8px -2px; }
 .tafel-pil { background: var(--yellow); color: var(--ink); font-weight: 700; font-size: 15px; padding: 8px 14px; border-radius: 999px; white-space: nowrap; }
 .g-welkom { margin: 16px 0 0; color: #E9F0E1; font-size: 15.5px; max-width: 40ch; }
-.g-main { flex: 1; padding: 0 16px 24px; margin-top: -26px; display: flex; flex-direction: column; gap: 14px; }
+/* Banner-grootte (tabblad Thema): compact en minimaal nemen minder van het scherm in */
+.g-top.compact { padding: calc(10px + env(safe-area-inset-top)) 16px 16px; border-radius: 0 0 22px 22px; }
+.g-top.compact .g-logo { height: calc(42px * var(--logo-schaal)); max-width: calc(140px * var(--logo-schaal)); }
+.g-top.compact .woordmerk { font-size: 32px; }
+.g-top.compact .g-top-rechts { flex-direction: row; align-items: center; gap: 8px; }
+.g-top.compact .tafel-pil { font-size: 13.5px; padding: 6px 12px; }
+.g-top.compact .taal button { min-height: 26px; min-width: 34px; font-size: 12px; padding: 0 8px; }
+.g-top.compact .g-welkom { margin-top: 10px; font-size: 14px; line-height: 1.35; }
+.g-top.minimaal .g-welkom { display: none; }
+.sociaal-blok { padding: 4px 0; }
+.g-main { flex: 1; padding: 18px 16px 24px; margin-top: 0; display: flex; flex-direction: column; gap: 14px; }
 
 .status { background: var(--yellow-soft); border-radius: var(--r); padding: 16px; box-shadow: var(--shadow); border: 1.5px solid var(--yellow-2); }
 .status-rij { display: flex; gap: 12px; align-items: center; }
@@ -169,7 +179,7 @@ img { max-width: 100%; }
 .badge-buurt { flex: none; width: 56px; height: 56px; border-radius: 12px; background: var(--soft); color: var(--green); display: grid; place-items: center; }
 .badge-buurt svg { width: 26px; height: 26px; }
 
-.g-voet { text-align: center; padding: 18px 24px calc(28px + env(safe-area-inset-bottom)); color: var(--muted); font-size: 14px; }
+.g-voet { text-align: center; padding: 6px 24px calc(20px + env(safe-area-inset-bottom)); color: var(--muted); font-size: 14px; }
 .sociaal-rij { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 .sociaal-knop { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; background: var(--card); box-shadow: var(--shadow); color: var(--ink); font-weight: 600; font-size: 14px; text-decoration: none; }
 .sociaal-knop svg { width: 18px; height: 18px; flex: none; }

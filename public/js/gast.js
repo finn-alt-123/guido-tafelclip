@@ -164,7 +164,7 @@ function wifiHtml(c) {
     ${w.wachtwoord ? `<button class="btn btn-licht btn-klein" data-a="kopieer-wifi">${I.kopie} ${L('Kopieer', 'Copy')}</button>` : ''}</section>`;
 }
 
-const VOLGORDE_KEYS = ['acties', 'wifi', 'mededelingen', 'buurt'];
+const VOLGORDE_KEYS = ['acties', 'wifi', 'mededelingen', 'buurt', 'sociaal'];
 function volgordeHtml(c, secties) {
   const volgorde = Array.isArray(c.volgorde) && c.volgorde.length === VOLGORDE_KEYS.length && VOLGORDE_KEYS.every((k) => c.volgorde.includes(k))
     ? c.volgorde : VOLGORDE_KEYS;
@@ -215,18 +215,17 @@ function pageHtml() {
   const ik = personeel.ik();
   const strook = ik && !VOORBEELD && store && store.mode === 'gedeeld' ? `<div class="personeel-strook"><span>Aangemeld als <strong>${esc(ik.naam)}</strong></span><a href="beheer.html#meldingen">Meldingen</a></div>` : '';
   return `${strook}<div class="g-app">
-    <header class="g-top">
+    <header class="g-top ${['compact', 'minimaal'].includes(c.theme && c.theme.banner) ? 'compact ' + c.theme.banner : ''}">
       <div class="g-top-rij">${woordmerk(c)}<div class="g-top-rechts"><span class="tafel-pil">${esc(t.naam)}</span>${taalKnop()}</div></div>
       ${(() => { const w = kiesTaal(c.cafe.welkom, c.cafe.welkomEn); return w ? `<p class="g-welkom">${esc(w)}</p>` : ''; })()}
     </header>
     <main class="g-main">
       ${volgordeHtml(c, { acties: actiesHtml(c), wifi: wifiHtml(c),
         mededelingen: med ? `<section class="sectie" aria-labelledby="h-med"><h2 id="h-med">${L('Bij', 'At')} ${esc(c.cafe.naam || L('ons', 'ours'))}</h2><div class="kaarten">${med}</div></section>` : '',
-        buurt: buurt ? `<section class="sectie" aria-labelledby="h-buurt"><h2 id="h-buurt">${L('In de buurt', 'Nearby')}</h2><div class="kaarten">${buurt}</div></section>` : '' })}
+        buurt: buurt ? `<section class="sectie" aria-labelledby="h-buurt"><h2 id="h-buurt">${L('In de buurt', 'Nearby')}</h2><div class="kaarten">${buurt}</div></section>` : '',
+        sociaal: sociaalHtml(c) })}
     </main>
-    <footer class="g-voet">
-      ${sociaalHtml(c)}
-    </footer>
+    <footer class="g-voet"></footer>
   </div>`;
 }
 
@@ -237,7 +236,7 @@ function sociaalHtml(c) {
     c.cafe.facebookUrl && { url: c.cafe.facebookUrl, ico: I.facebook, label: 'Facebook' }
   ].filter(Boolean);
   if (!knoppen.length) return '';
-  return `<div class="sociaal-rij">${knoppen.map((k) => `<a class="sociaal-knop" href="${esc(k.url)}" target="_blank" rel="noopener noreferrer">${k.ico}<span>${esc(k.label)}</span></a>`).join('')}</div>`;
+  return `<section class="sociaal-blok"><div class="sociaal-rij">${knoppen.map((k) => `<a class="sociaal-knop" href="${esc(k.url)}" target="_blank" rel="noopener noreferrer">${k.ico}<span>${esc(k.label)}</span></a>`).join('')}</div></section>`;
 }
 
 /* ---------------- sheets ---------------- */
