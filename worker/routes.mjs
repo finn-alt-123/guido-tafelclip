@@ -227,6 +227,13 @@ export async function routeApi(storage, env, req) {
       const w = await wie(storage, req, g);
       if (w.rol !== 'eigenaar') return fout('Dit mag enkel de eigenaar.', w.rol === 'personeel' ? 403 : 401, 'pin');
       const b = await body(req);
+      /* Bevestiging: het eigen wachtwoord, of — als je het vergeten bent — de opstartcode (GUIDO_SETUP_CODE) die enkel de eigenaar in Cloudflare kent. */
+      const bevestigd = (invoer) => {
+        const s = String(invoer || '');
+        if (pinKlopt(s, w.gebruiker)) return true;
+        const code = env.GUIDO_SETUP_CODE;
+        return !!code && s.length === code.length && crypto.timingSafeEqual(Buffer.from(s), Buffer.from(code));
+      };
       switch (b.type) {
         case 'gebruiker-plus': case 'gebruiker-wijzig': case 'gebruiker-weg': {
           await wijzig(storage, 'gebruikers', GEBRUIKERS_LEEG, (d) => {
@@ -235,7 +242,7 @@ export async function routeApi(storage, env, req) {
               const naam = String(b.naam || '').trim().slice(0, 40);
               if (!naam) err('Vul een naam in.');
               if (d.lijst.some((x) => naamSleutel(x.naam) === naamSleutel(naam))) err('Die naam bestaat al.');
-              if (!pinKlopt(b.huidig, w.gebruiker)) err('Je huidige wachtwoord klopt niet.');
+              if (!bevestigd(b.huidig)) err('Je huidige wachtwoord (of de opstartcode) klopt niet.');
               if (!/^(?=.*[a-zA-Z])(?=.*[0-9]).{8,72}$/.test(String(b.pin || ''))) err('Een wachtwoord heeft minstens 8 tekens, met zowel letters als cijfers.');
               d.lijst.push({ id: uid(), naam, rol: b.rol === 'eigenaar' ? 'eigenaar' : 'personeel', ...hashPin(b.pin), versie: 0, aan: true });
               return;
@@ -246,7 +253,7 @@ export async function routeApi(storage, env, req) {
             const laatsteEigenaar = x.rol === 'eigenaar' && eigenaars.length === 1;
             if (b.type === 'gebruiker-weg') { if (laatsteEigenaar) err('Je kan de laatste eigenaar niet verwijderen.'); d.lijst = d.lijst.filter((y) => y.id !== b.id); return; }
             if (b.pin !== undefined) {
-              if (!pinKlopt(b.huidig, w.gebruiker)) err('Je huidige wachtwoord klopt niet.');
+              if (!bevestigd(b.huidig)) err('Je huidige wachtwoord (of de opstartcode) klopt niet.');
               if (!/^(?=.*[a-zA-Z])(?=.*[0-9]).{8,72}$/.test(String(b.pin))) err('Een wachtwoord heeft minstens 8 tekens, met zowel letters als cijfers.');
               Object.assign(x, hashPin(b.pin)); x.versie = (x.versie || 0) + 1;
             }

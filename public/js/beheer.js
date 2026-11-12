@@ -635,7 +635,7 @@ function personeelTab() {
         <div class="veldrij"><label for="np-naam">Naam</label><input type="text" id="np-naam" maxlength="40" required></div>
         <div class="veldrij"><label for="np-pin">Wachtwoord (min. 8 tekens, letters en cijfers)</label><input type="password" id="np-pin" minlength="8" maxlength="72" required></div>
         <div class="veldrij"><label for="np-rol">Rol</label><select id="np-rol"><option value="personeel">Personeel</option><option value="eigenaar">Eigenaar</option></select></div>
-        <div class="veldrij"><label for="np-huidig">Jouw huidige wachtwoord (ter bevestiging)</label><input type="password" id="np-huidig" minlength="8" maxlength="72" required></div>
+        <div class="veldrij"><label for="np-huidig">Jouw huidige wachtwoord ter bevestiging — of de opstartcode als je het vergeten bent</label><input type="password" id="np-huidig" required></div>
         <div><button class="btn btn-groen btn-klein" type="submit">Toevoegen</button></div>
       </form>
       <p class="small muted" style="margin:10px 0 0">Geef het wachtwoord mondeling door. Op een iPhone: open <code>${esc(location.origin)}/beheer.html</code>, meld je aan, zet de app op het beginscherm en zet meldingen aan.</p>
@@ -685,7 +685,7 @@ async function extraKlik(a, el) {
     case 'g-pin': {
       const pin = prompt('Nieuw wachtwoord (minstens 8 tekens, met letters en cijfers):');
       if (!pin) return true;
-      const huidig = prompt('Bevestig met je eigen huidige wachtwoord:');
+      const huidig = prompt('Bevestig met je eigen huidige wachtwoord (of de opstartcode als je het vergeten bent):');
       if (!huidig) return true;
       const r = await opdracht(a, 'gebruiker-wijzig', { id: el.dataset.id, pin: pin.trim(), huidig: huidig.trim() });
       if (r) toast('Wachtwoord gewijzigd. Die persoon moet zich opnieuw aanmelden.');
